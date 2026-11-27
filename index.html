@@ -1,309 +1,251 @@
 <!DOCTYPE html>
-
 <html lang="ja">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>SORA WORLD - PLANET 001</title>
-
 <style>
-
 *{box-sizing:border-box}
-
-body{
-
- margin:0;background:#050b0b;color:#9aff9a;
-
- font-family:monospace;padding:18px;
-
-}
-
-header{border-bottom:1px solid #397b53;padding-bottom:14px}
-
-h1{font-size:23px;letter-spacing:3px}
-
-.small{color:#6c9b7b;font-size:11px}
-
-.panel{
-
- border:1px solid #286343;padding:14px;
-
- margin-top:15px;background:#091512;
-
-}
-
-h2{font-size:14px;color:#ffc56a}
-
-.big{font-size:23px;color:#c5ffb4}
-
-button{
-
- background:#10251b;color:#9aff9a;
-
- border:1px solid #4caa70;padding:11px;
-
- margin:4px 2px;font-family:monospace;
-
-}
-
-button:active{background:#315b3e}
-
-#planet{
-
- height:175px;display:flex;align-items:center;
-
- justify-content:center;position:relative;
-
- overflow:hidden;
-
- background:radial-gradient(ellipse,#173d32,#07100e 70%);
-
-}
-
-#planet span{
-
- font-size:88px;
-
- filter:drop-shadow(0 0 15px #64ff9a);
-
- animation:float 5s ease-in-out infinite;
-
-}
-
-@keyframes float{
-
- 50%{transform:translateY(-9px)}
-
-}
-
-#log{font-size:12px;line-height:1.9;color:#b9d8bc}
-
-nav{display:flex;flex-wrap:wrap;margin-top:12px}
-
+body{margin:0 auto;max-width:640px;background:#000;color:#5dff7a;font-family:Courier,monospace;padding:14px}
+header{border-bottom:2px solid #2a8a44;padding-bottom:10px}
+h1{font-size:23px;letter-spacing:3px;margin:6px 0}
+h2{font-size:14px;color:#ffa332;margin-top:0}
+.small{font-size:11px;color:#42b45a}
+.panel{border:1px solid #2a8a44;padding:12px;margin-top:12px;background:#020a04}
+.big{font-size:19px;color:#c9ffd2}
+button,textarea,input{font-family:Courier,monospace;color:#5dff7a;background:#04180a;border:1px solid #3fbf5f;border-radius:0}
+button{padding:10px;margin:4px 4px 0 0;font-size:13px}
+button.on{background:#5dff7a;color:#000}
+textarea{width:100%;height:90px;font-size:16px;margin-top:8px}
+input[type=text]{width:100%;padding:9px;font-size:16px}
 section{display:none}
-
 section.active{display:block}
-
+#log div{font-size:12px;line-height:1.6;border-bottom:1px dotted #1d5c2e;padding:5px 0;word-wrap:break-word}
+#warn{display:none;border-color:#ffa332;color:#ffa332}
+#planet{text-align:center;font-size:12px;line-height:1.15;white-space:pre;color:#5dff7a}
+body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-events:none;background:repeating-linear-gradient(transparent 0,transparent 2px,rgba(0,0,0,.25) 3px)}
 </style>
-
 </head>
-
 <body>
-
 <header>
-
-<div class="small">SORA OBSERVATION SYSTEM / VERSION 0.1</div>
-
+<div class="small">SORA OBSERVATION SYSTEM / VERSION 0.4 - PHASE 1</div>
 <h1>SORA WORLD</h1>
-
-<div class="small">UNKNOWN PLANET OBSERVATION PROJECT</div>
-
+<div class="small">A WORLD THAT LIVES ON.</div>
 </header>
-
+<div class="panel" id="warn" role="alert"></div>
 <div class="panel">
-
-<div class="small">OBSERVATION TARGET</div>
-
-<div class="big">PLANET No.001</div>
-
-<div class="small">惑星名称：未確認</div>
-
+<div class="small">PLANET No.001 / 惑星時間</div>
+<div class="big" id="date">----</div>
+<div class="big" id="clock">--:--</div>
+<div class="small" id="phase"></div>
 </div>
-
-<div class="panel" id="planet">
-
-<span>🪐</span>
-
+<div id="nav">
+<button data-s="main" class="on">MAIN</button><button data-s="history">HISTORY</button><button data-s="system">SYSTEM</button>
 </div>
-
-<nav>
-
-<button onclick="show('status')">PLANET</button>
-
-<button onclick="show('life')">LIFE</button>
-
-<button onclick="show('history')">HISTORY</button>
-
-<button onclick="show('contact')">CONTACT</button>
-
-</nav>
-
-<section id="status" class="active">
-
-<div class="panel">
-
-<h2>PLANET DATA / 惑星情報</h2>
-
-<p>名称：未確認</p>
-
-<p>環境：観測中</p>
-
-<p>文明：未確認</p>
-
-<p>生命体：未知</p>
-
-<p>時間単位：未定義</p>
-
-<p>観測開始から：<span id="elapsed">0</span> 観測刻</p>
-
-</div>
-
+<section id="main" class="active">
+<div class="panel"><div id="planet">   .-"""-.
+ /  .:::.  \
+|  ::::' .:  |
+|  ':'  :::  |
+ \     ':'  /
+   '-...-'</div></div>
+<div class="panel"><h2>PLANET DATA / 惑星情報</h2><div id="data"></div></div>
 </section>
-
-<section id="life">
-
-<div class="panel">
-
-<h2>LIFE / 生命体観測</h2>
-
-<p id="lifeText">現在、知的生命体は確認されていません。</p>
-
-<button onclick="discover()">生命反応をスキャン</button>
-
-</div>
-
-</section>
-
 <section id="history">
-
-<div class="panel">
-
-<h2>HISTORY / 惑星の歴史</h2>
-
-<div id="log">観測記録なし。<br>この星の歴史は、これから始まります。</div>
-
-</div>
-
+<div class="panel"><h2>WORLD CHRONICLE / 惑星の歴史</h2>
+<div class="small">記録は削除・上書きしません。訂正は新しい記録として追加します。</div>
+<div id="log"></div><button id="more">さらに表示</button></div>
+<div class="panel"><h2>訂正・注記の追加</h2>
+<div class="small">対象の番号（#）と内容を入力してください。</div>
+<input type="text" id="refNo" placeholder="番号（例: 3）">
+<textarea id="note" placeholder="訂正内容"></textarea>
+<button id="addNote">追記する</button></div>
 </section>
-
-<section id="contact">
-
-<div class="panel">
-
-<h2>CONTACT / 観測者通信</h2>
-
-<p>通信チャンネル：未接続</p>
-
-<p>ここには将来、子供空との通信機能が接続されます。</p>
-
-</div>
-
+<section id="system">
+<div class="panel"><h2>WORLD SEED / 暦の設定（仮）</h2><div id="seed" class="small"></div></div>
+<div class="panel"><h2>BACKUP / 書き出し</h2>
+<button id="export">JSONを書き出す</button><button id="show">テキストで表示</button>
+<textarea id="out" readonly style="display:none"></textarea></div>
+<div class="panel"><h2>RESTORE / 読み込み</h2>
+<div class="small">同じ惑星のデータは、不足している記録だけを追加します。</div>
+<input type="file" id="file" accept=".json,application/json">
+<textarea id="in" placeholder="またはJSONを貼り付け"></textarea>
+<button id="import">読み込む</button></div>
 </section>
-
-<div class="panel">
-
-<h2>OBSERVATION CONTROL</h2>
-
-<button onclick="advance()">時間を進める</button>
-
-<button onclick="scan()">惑星を観測する</button>
-
-<div class="small" id="message">SYSTEM READY...</div>
-
-</div>
-
+<div class="panel small" id="message">SYSTEM READY...</div>
 <script>
-
-var tick=0;
-
-var records=[];
-
-function show(id){
-
- document.querySelectorAll('section').forEach(
-
-  function(s){s.classList.remove('active')}
-
- );
-
- document.getElementById(id).classList.add('active');
-
+(function(){
+var KEY='sora_world_v1',BAK='sora_world_v1_backup';
+/* 暦（仮設定）: 惑星の1日=現実の60分 */
+var CAL={dayMs:3600000,hours:24,daysPerSeason:30,seasons:['芽吹きの季','光の季','実りの季','静寂の季'],week:['一の日','二の日','三の日','四の日','五の日','六の日']};
+var world=null,readOnly=false,limit=50;
+function $(id){return document.getElementById(id)}
+function msg(t){$('message').textContent=t}
+function warn(t){$('warn').style.display='block';$('warn').textContent='！警告：'+t}
+function get(k){return window.localStorage.getItem(k)}
+function put(k,v){window.localStorage.setItem(k,v)}
+function uid(){return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)}
+function copy(o){return JSON.parse(JSON.stringify(o))}
+function isNum(n){return typeof n==='number'&&isFinite(n)}
+function valid(w){
+ if(!w||w.format!==1||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||!w.chronicle.length&&w.chronicle.length!==0)return false;
+ return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
-
+/* 追加のみ。同じIDで内容が違う場合は既存を残し、別記録にする */
+function merge(base,extra){
+ var map=Object.create(null),n=0;
+ base.chronicle.forEach(function(e){map[e.id]=e});
+ extra.chronicle.forEach(function(e){
+  var c=copy(e),old=map[c.id];
+  if(old){
+   if(old.text===c.text||/^(season|genesis)-/.test(c.id))return;
+   c.id=c.id+'~'+c.text.length+'-'+c.rt;
+   if(map[c.id])return;
+   c.text='［内容の異なる記録］'+c.text;
+  }
+  base.chronicle.push(c);map[c.id]=c;n++;
+ });
+ base.lastSim=Math.max(base.lastSim,extra.lastSim);
+ base.season=Math.max(base.season,extra.season);
+ return n;
+}
 function save(){
-
+ if(readOnly)return false;
  try{
-
- localStorage.setItem('sora_tick',tick);
-
- localStorage.setItem('sora_records',JSON.stringify(records));
-
- }catch(e){}
-
+  var raw=get(KEY);
+  if(raw){
+   var s=JSON.parse(raw);
+   if(!valid(s))throw new Error('invalid');
+   if(s.seed.worldId!==world.seed.worldId){readOnly=true;warn('別の画面で惑星データが変わりました。再読み込みしてください。');return false}
+   merge(world,s);
+  }
+  put(KEY,JSON.stringify(world));return true;
+ }catch(e){warn('保存できませんでした。SYSTEM画面からJSONを書き出してください。');return false}
 }
-
-function load(){
-
- try{
-
- tick=Number(localStorage.getItem('sora_tick'))||0;
-
- records=JSON.parse(localStorage.getItem('sora_records'))||[];
-
- }catch(e){}
-
- update();
-
+/* 番号は追加順で固定する */
+function add(type,text,wt,id,ref){
+ var e={id:id||uid(),type:type,text:text,wt:wt,rt:Date.now()};
+ if(ref)e.ref=ref;
+ world.chronicle.push(e);
 }
-
-function update(){
-
- document.getElementById('elapsed').textContent=tick;
-
- document.getElementById('log').innerHTML=
-
- records.length?records.join('<br>'):'観測記録なし。';
-
+function create(){
+ var now=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
+ oldTick=get('sora_tick');oldRec=get('sora_records');
+ if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
+ world={format:1,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:now,calendar:copy(CAL),initialLife:'未設定（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'provisional'},lastSim:now,season:0,chronicle:[]};
+ /* 旧データ（元のキーは消さない） */
+ for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
+ if(oldTick!==null||oldRec!==null){
+  world.legacy={tick:oldTick,records:oldRec};
+  add('system',bad?'旧記録は形式を読めなかったため、原文のまま保管した':'旧Ver.0.1の記録を引き継いだ（観測刻: '+(oldTick||0)+'）',0);
+ }
+ add('world','惑星No.001の記録を開始した',0,'genesis-'+world.seed.worldId);
 }
-
-function addRecord(t){
-
- records.unshift('['+tick+'刻] '+t);
-
- save();update();
-
+function parts(t){
+ var c=world.seed.calendar,w=Math.max(0,t),day=Math.floor(w/c.dayMs),len=c.daysPerSeason*c.seasons.length;
+ var mins=Math.floor((w%c.dayMs)/c.dayMs*c.hours*60),h=Math.floor(mins/60);
+ return {day:day,year:Math.floor(day/len)+1,season:c.seasons[Math.floor(day%len/c.daysPerSeason)],sday:day%c.daysPerSeason+1,week:c.week[day%c.week.length],h:h,m:mins%60,seasonNo:Math.floor(day/c.daysPerSeason)};
 }
-
-function advance(){
-
- tick++;
-
- document.getElementById('message').textContent=
-
- '惑星時間が進行しました。';
-
- addRecord('観測時間が1刻進行');
-
+function stamp(t){var p=parts(t);return p.year+'年 '+p.season+' '+p.sday+'日'}
+/* 経過時間の反映。端末の時計が戻っても惑星時間は戻さない */
+function simulate(){
+ var now=Math.max(Date.now(),world.lastSim),c=world.seed.calendar,len=c.daysPerSeason*c.dayMs;
+ var target=Math.floor((now-world.seed.epoch)/len),n=0;
+ world.lastSim=now;
+ while(world.season<target&&n<2000){
+  world.season++;n++;
+  var t=world.season*len;
+  add('nature',stamp(t)+'：'+parts(t).season+'が訪れた',t,'season-'+world.season);
+ }
+ return n;
 }
-
-function scan(){
-
- document.getElementById('message').textContent=
-
- 'スキャン完了。未知の惑星を観測中。';
-
- addRecord('惑星表面の観測を実施');
-
+function now(){return Math.max(Date.now(),world.lastSim)-world.seed.epoch}
+function line(parent,text){var d=document.createElement('div');d.textContent=text;parent.appendChild(d)}
+function drawClock(){
+ var p=parts(now()),h=p.h/world.seed.calendar.hours;
+ $('date').textContent=p.year+'年 '+p.season+' '+p.sday+'日（'+p.week+'）';
+ $('clock').textContent=('0'+p.h).slice(-2)+':'+('0'+p.m).slice(-2);
+ $('phase').textContent=h<0.2||h>=0.8?'夜':h<0.45?'朝':h<0.7?'昼':'夕方';
 }
-
-function discover(){
-
- document.getElementById('lifeText').textContent=
-
- '微弱な生命反応を検出。詳細はまだ不明。';
-
- addRecord('微弱な生命反応を初めて検出');
-
+function draw(){
+ drawClock();
+ $('data').innerHTML='';
+ ['経過日数：'+parts(now()).day+'日','記録数：'+world.chronicle.length+'件','生命体：未観測（PHASE 2で実装）','文明：未確認'].forEach(function(t){line($('data'),t)});
+ var log=$('log'),list=world.chronicle,num=Object.create(null),i;
+ log.innerHTML='';
+ for(i=0;i<list.length;i++)num[list[i].id]=i+1;
+ for(i=list.length-1;i>=0&&i>=list.length-limit;i--){
+  var e=list[i];
+  line(log,'#'+(i+1)+' '+(isNum(e.wt)?'['+stamp(e.wt)+'] ':'')+(e.ref?'（#'+(num[e.ref]||'?')+'への訂正）':'')+e.text);
+ }
+ $('more').style.display=list.length>limit?'':'none';
+ var s=world.seed,c=s.calendar;
+ $('seed').textContent='世界ID: '+s.worldId+' / 地形SEED: '+s.terrainSeed+' / 開始: '+new Date(s.epoch).toLocaleString()+' / 1日=現実の'+(c.dayMs/60000)+'分 / 1季='+c.daysPerSeason+'日 / 1年='+c.seasons.length+'季 / 週='+c.week.length+'日';
 }
-
-load();
-
+function json(){return readOnly&&!world.seed?world.raw:JSON.stringify(world)}
+function importText(text){
+ if(readOnly){msg('保護モード中は読み込めません。');return}
+ var w;try{w=JSON.parse(text)}catch(e){msg('JSONを読めませんでした。');return}
+ if(!valid(w)){msg('SORA WORLDのデータではありません。');return}
+ if(!save())return;
+ try{put(BAK,JSON.stringify(world))}catch(e){msg('バックアップを作れないため中止しました。先にJSONを書き出してください。');return}
+ if(w.seed.worldId===world.seed.worldId){
+  var n=merge(world,w);if(save())msg(n+'件の記録を追加しました。')
+ }else{
+  /* 別の惑星: 開始直後の空の惑星だけ、確認の上で復元 */
+  var fresh=!world.legacy&&world.chronicle.every(function(e){return e.type==='world'||e.type==='nature'});
+  if(!fresh){msg('別の惑星のデータです。今の歴史を守るため読み込みません。');return}
+  if(!window.confirm('今の惑星（利用者の記録なし）から、バックアップの惑星へ切り替えます。よろしいですか？'))return;
+  try{put(BAK+'_before_restore_'+world.seed.worldId,JSON.stringify(world));put(KEY,JSON.stringify(w))}catch(e){msg('復元を保存できませんでした。');return}
+  world=w;simulate();if(save())msg('惑星を復元しました。');
+ }
+ draw();
+}
+function init(){
+ var raw=null;
+ try{raw=get(KEY)}catch(e){readOnly=true;warn('このブラウザでは保存領域を使えません。記録は残りません。')}
+ if(raw!==null){
+  try{world=JSON.parse(raw);if(!valid(world))throw 0}catch(e){
+   readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
+   world={raw:raw};
+  }
+ }else{
+  try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
+ }
+ Array.prototype.forEach.call($('nav').children,function(b){b.onclick=function(){
+  Array.prototype.forEach.call($('nav').children,function(x){x.className=''});
+  Array.prototype.forEach.call(document.getElementsByTagName('section'),function(x){x.className=''});
+  b.className='on';$(b.getAttribute('data-s')).className='active';
+ }});
+ $('show').onclick=function(){$('out').style.display='block';$('out').value=json()};
+ $('export').onclick=function(){
+  var a=document.createElement('a');
+  if(!('download' in a)||!window.Blob||!window.URL){$('show').onclick();msg('表示された文章をすべてコピーして保存してください。');return}
+  a.href=URL.createObjectURL(new Blob([json()],{type:'application/json'}));a.download='sora-world-backup.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+ };
+ if(!world.seed)return;
+ var found=simulate();
+ save();draw();
+ if(found)msg('不在中に季節が'+found+'回移り変わりました。');
+ $('more').onclick=function(){limit+=50;draw()};
+ $('addNote').onclick=function(){
+  var i=parseInt($('refNo').value,10),t=$('note').value.replace(/^\s+|\s+$/g,'');
+  if(readOnly||!t||!(i>=1&&i<=world.chronicle.length)){msg('番号と内容を確認してください。');return}
+  add('correction',t,now(),null,world.chronicle[i-1].id);
+  if(save()){$('note').value='';$('refNo').value='';msg('追記しました。')}
+  draw();
+ };
+ $('import').onclick=function(){importText($('in').value)};
+ $('file').onchange=function(){
+  if(!this.files||!this.files[0])return;
+  var r=new FileReader();r.onload=function(){$('in').value=r.result;msg('内容を確認して「読み込む」を押してください。')};r.readAsText(this.files[0]);
+ };
+ setInterval(drawClock,1000);
+ setInterval(function(){var n=simulate();save();if(n)draw()},30000);
+}
+init();
+})();
 </script>
-
 </body>
-
 </html>
