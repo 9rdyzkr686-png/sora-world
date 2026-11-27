@@ -28,7 +28,7 @@ body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-event
 </head>
 <body>
 <header>
-<div class="small">SORA OBSERVATION SYSTEM / VERSION 0.7 - PHASE 1-4</div>
+<div class="small">SORA OBSERVATION SYSTEM / VERSION 0.8 - PHASE 1-5</div>
 <h1>SORA WORLD</h1>
 <div class="small">A WORLD THAT LIVES ON.</div>
 </header>
@@ -40,7 +40,7 @@ body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-event
 <div class="small" id="phase"></div>
 </div>
 <div id="nav">
-<button data-s="main" class="on">MAIN</button><button data-s="planetsec">PLANET</button><button data-s="map">MAP</button><button data-s="life">LIFE</button><button data-s="sora">SORA-01</button><button data-s="memory">MEMORY</button><button data-s="relation">RELATION</button><button data-s="news">NEWS</button><button data-s="history">HISTORY</button><button data-s="system">SYSTEM</button>
+<button data-s="main" class="on">MAIN</button><button data-s="planetsec">PLANET</button><button data-s="map">MAP</button><button data-s="life">LIFE</button><button data-s="sora">SORA-01</button><button data-s="memory">MEMORY</button><button data-s="relation">RELATION</button><button data-s="news">NEWS</button><button data-s="history">HISTORY</button><button data-s="space">SPACE</button><button data-s="replay">REPLAY</button><button data-s="system">SYSTEM</button>
 </div>
 <section id="main" class="active">
 <div class="panel"><div id="planet">   .-"""-.
@@ -89,6 +89,16 @@ body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-event
 <textarea id="note" placeholder="訂正内容"></textarea>
 <button id="addNote">追記する</button></div>
 </section>
+<section id="space">
+<div class="panel"><h2>SPACE / 宇宙・衛星・恒星</h2><div id="spaceData"></div></div>
+<div class="panel"><h2>OTHER PLANETS / 他惑星</h2><div id="planetList"></div></div>
+</section>
+<section id="replay">
+<div class="panel"><h2>OBSERVATION REPLAY / 過去の再現</h2>
+<div class="small">再表示は保存された記録に基づきます。記録文から再現できる範囲で表示します。</div>
+<div id="replayList"></div></div>
+<div class="panel"><h2>REPLAY DETAIL</h2><div id="replayDetail"></div></div>
+</section>
 <section id="system">
 <div class="panel"><h2>WORLD SEED / 暦の設定</h2><div id="seed" class="small"></div></div>
 <div class="panel"><h2>BACKUP / 書き出し</h2>
@@ -124,7 +134,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -199,7 +209,7 @@ function generateData(w){
 /* format1 -> format2 移行。旧記録には一切触れず、新規追加のみ */
 function migrateWorld(w){
  ensureCalendar(w);
- if(w.format===4){if(!w.regions||!w.life)generateData(w);initEcosystem(w);formGroupsW(w);initCivilization(w);return false}
+ if(w.format===5){if(!w.regions||!w.life)generateData(w);initEcosystem(w);formGroupsW(w);initCivilization(w);initSpace(w);return false}
  if(w.format===1){
   w.format=2;
   if(!w.regions||!w.life)generateData(w);
@@ -210,18 +220,22 @@ function migrateWorld(w){
  if(fromF<3){w.format=3;initEcosystem(w);
  w.chronicle.push({id:uid()+'-mig3',type:'system',text:'PHASE 3へ移行した（ECOSYSTEM開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});}
  else initEcosystem(w);
- w.format=4;
- initCivilization(w);
- if(w.seed)w.seed.status='phase1-4';
- w.chronicle.push({id:uid()+'-mig4',type:'system',text:'PHASE 4へ移行した（CIVILIZATION開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
+ var fromF4=w.format;
+ if(fromF4<4){w.format=4;initCivilization(w);
+ w.chronicle.push({id:uid()+'-mig4',type:'system',text:'PHASE 4へ移行した（CIVILIZATION開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});}
+ else initCivilization(w);
+ w.format=5;
+ initSpace(w);
+ if(w.seed)w.seed.status='phase1-5';
+ w.chronicle.push({id:uid()+'-mig5',type:'system',text:'PHASE 5へ移行した（UNIVERSE開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
  return true;
 }
 function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:4,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'phase1-4'},lastSim:nowMs,season:0,chronicle:[]};
- generateData(world);initEcosystem(world);initCivilization(world);
+ world={format:5,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'phase1-5'},lastSim:nowMs,season:0,chronicle:[]};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -399,6 +413,46 @@ function dailyCivilization(p,wt){
    else{world.newsExtra.push({wt:wt,text:'交易：'+ttext});while(world.newsExtra.length>20)world.newsExtra.shift()}
   }
  }
+}
+function initSpace(w){
+ if(w.space&&w.space.planets)return;
+ var rng=makeRng(((w.seed.terrainSeed^0x57ac)>>>0)+55555),i;
+ var moonNames=['セレス','ミオラ','タリナ','オルン','ヴェラ'];
+ var starTypes=['橙色の恒星','白い恒星','赤い小星','青白い恒星'];
+ var envs=['岩石と氷の世界','厚い雲に覆われた世界','砂漠の世界','海に覆われた世界','火山の世界','静寂の氷原の世界'];
+ var planets=[],np=ri(rng,4,5);
+ var syl=['カ','ミ','ソ','ラ','ヌ','ピ','ホ','タ','ル','メ','ゼ','ア'];
+ for(i=0;i<np;i++){
+  planets.push({name:syl[ri(rng,0,11)]+syl[ri(rng,0,11)]+syl[ri(rng,0,11)],distance:(ri(rng,2,40)*10)+'万km',environment:envs[ri(rng,0,envs.length-1)],lifeChance:ri(rng,0,60)});
+ }
+ w.space={moonName:moonNames[ri(rng,0,moonNames.length-1)],starName:syl[ri(rng,0,11)]+syl[ri(rng,0,11)]+'星',starType:starTypes[ri(rng,0,starTypes.length-1)],planets:planets};
+ if(!w.spaceEventsLogged)w.spaceEventsLogged={};
+}
+function spaceEventFor(day){
+ var c=world.seed.calendar;
+ if(day%c.moonCycleDays===10)return {type:'衛星食',text:'衛星食：'+world.space.moonName+'が影に入る'};
+ var rng=makeRng((world.seed.terrainSeed+day*104729)>>>0),v=rng();
+ if(v<0.05)return {type:'流星群',text:'流星群が観測された'};
+ if(v<0.08)return {type:'彗星接近',text:'彗星が接近している'};
+ if(v<0.095)return {type:'日食',text:'日食のような現象：恒星が衛星に隠れた'};
+ return null;
+}
+function checkSpaceEvent(){
+ if(!world.space)return;
+ var p=parts(elapsedNow()),ev=spaceEventFor(p.day);
+ if(ev&&!world.spaceEventsLogged[p.day]){
+  world.spaceEventsLogged[p.day]=1;
+  world.newsExtra.push({wt:elapsedNow(),text:'宇宙：'+ev.text});
+  while(world.newsExtra.length>20)world.newsExtra.shift();
+ }
+}
+var REPLAY_TYPES={world:1,discovery:1,meeting:1,birth:1,death:1,disaster:1,culture:1,nature:1,request:1};
+var selectedReplay=-1;
+function findRelated(text){
+ var out=[],i;
+ for(i=0;i<world.regions.length;i++){var r=world.regions[i];if(text.indexOf(r.name)>=0)out.push('地域 '+r.name+'（'+r.terrain+'） 現在：植生'+Math.round(r.vegetation||0)+' 水位'+Math.round(r.waterLevel||0)+(r.discovered?' 発見済み':' 未発見'))}
+ for(i=0;i<world.life.length;i++){var cr=world.life[i];if(cr.name!=='SORA-01'&&text.indexOf(cr.name)>=0)out.push('生命 '+cr.name+'（'+cr.species+'） 現在：'+(cr.alive===false?'死亡':cr.state+' / '+world.regions[cr.region].name))}
+ return out;
 }
 function computeRequest(p){
  var sora=findLife('sora-01');
@@ -588,7 +642,7 @@ function draw(){
  var p=parts(elapsedNow()),wx=weatherFor(p.day,p.seasonIdx),tp=temperature(p);
  var sora=findLife('sora-01'),li=latestImportant();
  $('data').innerHTML='';
- ['経過日数：'+p.day+'日','天候：'+wx+' / 気温：'+tp+'℃','月：'+moonName(p.day),'記録数：'+world.chronicle.length+'件','生命体：'+aliveCount()+'体（登録'+world.life.length+'体）','発見した地域：'+discoveredCount()+' / '+world.regions.length,'最近のニュース：'+(li?li.text:'なし'),'SORA-01：'+sora.state+'（'+world.regions[sora.region].name+'）','文明：集落'+world.settlements.length+'件','群れ：'+world.groups.length+'組','SORA-01の願い：'+(world.soraRequest?world.soraRequest.text:'なし')].forEach(function(t){line($('data'),t)});
+ ['経過日数：'+p.day+'日','天候：'+wx+' / 気温：'+tp+'℃','月：'+moonName(p.day),'記録数：'+world.chronicle.length+'件','生命体：'+aliveCount()+'体（登録'+world.life.length+'体）','発見した地域：'+discoveredCount()+' / '+world.regions.length,'最近のニュース：'+(li?li.text:'なし'),'SORA-01：'+sora.state+'（'+world.regions[sora.region].name+'）','文明：集落'+world.settlements.length+'件','群れ：'+world.groups.length+'組','SORA-01の願い：'+(world.soraRequest?world.soraRequest.text:'なし'),'宇宙：衛星'+(world.space?world.space.moonName:'')+' / '+(spaceEventFor(p.day)?spaceEventFor(p.day).text:'今夜の大きな宇宙現象なし')].forEach(function(t){line($('data'),t)});
  /* PLANET */
  var dl=daylightFor(p.seasonIdx),sr=12-dl/2;
  $('planetData').innerHTML='';
@@ -642,6 +696,35 @@ function draw(){
  for(var n2=world.chronicle.length-1;n2>=0&&cnt<50;n2--){var e2=world.chronicle[n2];if(IMPORTANT[e2.type]){line(nl,(isNum(e2.wt)?'['+stamp(e2.wt)+'] ':'')+e2.text);cnt++}}
  world.newsExtra.slice().reverse().forEach(function(x){line(nl,(isNum(x.wt)?'['+stamp(x.wt)+'] ':'')+x.text)});
  if(!cnt&&!world.newsExtra.length)line(nl,'ニュースはまだありません。');
+ /* SPACE */
+ var sd=$('spaceData');sd.innerHTML='';
+ if(world.space){
+  var nxFull=(world.seed.calendar.moonCycleDays-(p.day%world.seed.calendar.moonCycleDays)+10)%world.seed.calendar.moonCycleDays;
+  var ev2=spaceEventFor(p.day);
+  ['衛星：'+world.space.moonName+'（周期'+world.seed.calendar.moonCycleDays+'日）','現在の月：'+moonName(p.day),'次の満月まで：'+nxFull+'日','恒星：'+world.space.starName+'（'+world.space.starType+'）','今日の宇宙現象：'+(ev2?ev2.text:'なし')].forEach(function(t){line(sd,t)});
+  var pl=$('planetList');pl.innerHTML='';
+  world.space.planets.forEach(function(px){line(pl,px.name+'：距離 '+px.distance+' / '+px.environment+' / 生命の可能性 '+px.lifeChance+'%（観測のみ）')});
+ }
+ /* REPLAY */
+ var rp=$('replayList');rp.innerHTML='';
+ var majors=[],mi;
+ for(mi=world.chronicle.length-1;mi>=0&&majors.length<50;mi--)if(REPLAY_TYPES[world.chronicle[mi].type])majors.push(mi);
+ if(!majors.length)line(rp,'再現できる大きな出来事はまだありません。');
+ majors.forEach(function(idx){
+  var b=document.createElement('button');var e=world.chronicle[idx];
+  b.textContent='#'+(idx+1)+' '+(isNum(e.wt)?stamp(e.wt):'')+' '+e.type;
+  b.onclick=(function(ii){return function(){selectedReplay=ii;draw()}})(idx);rp.appendChild(b);
+ });
+ var rd=$('replayDetail');rd.innerHTML='';
+ if(selectedReplay>=0&&world.chronicle[selectedReplay]){
+  var re=world.chronicle[selectedReplay];
+  line(rd,'記録 #'+(selectedReplay+1)+'［'+re.type+'］');
+  line(rd,isNum(re.wt)?'惑星日時：'+stampFull(re.wt):'惑星日時：記録なし');
+  line(rd,re.text);
+  var rel=findRelated(re.text);
+  if(rel.length){line(rd,'-- 現在の関連データ --');rel.forEach(function(t){line(rd,t)})}
+  else line(rd,'関連データは記録文からは特定できませんでした。');
+ }else line(rd,'出来事を選ぶとここに再表示します。');
  /* HISTORY */
  var log=$('log'),list=world.chronicle,num=Object.create(null),i3;
  log.innerHTML='';
@@ -733,11 +816,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&(world.format===1||world.format===2||world.format===3)){
-   try{put(BAK+'_pre_v4',raw)}catch(e2){}
+  if(world&&world.seed&&(world.format===1||world.format===2||world.format===3||world.format===4)){
+   try{put(BAK+'_pre_v5',raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
@@ -756,8 +839,9 @@ function init(){
  };
  if(!world.seed)return;
  var found=simulate();
+ checkSpaceEvent();
  save();draw();
- if(migrated)msg('PHASE 4へ移行しました。不在中に'+found.days+'日が経過しました。');
+ if(migrated)msg('PHASE 5へ移行しました。不在中に'+found.days+'日が経過しました。');
  else if(found.days>0||found.seasons>0)msg('不在中に'+found.days+'日が経過し、季節が'+found.seasons+'回移り変わりました。生命が活動しました。');
  $('more').onclick=function(){limit+=50;draw()};
  $('addNote').onclick=function(){
@@ -773,7 +857,7 @@ function init(){
   var r=new FileReader();r.onload=function(){$('in').value=r.result;msg('内容を確認して「読み込む」を押してください。')};r.readAsText(this.files[0]);
  };
  setInterval(drawClock,1000);
- setInterval(function(){var n=simulate();if(n.steps>0){save();draw()}},30000);
+ setInterval(function(){var n=simulate();checkSpaceEvent();if(n.steps>0){save();draw()}},30000);
 }
 init();
 })();
