@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>SORA WORLD - PLANET 001</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{
+
+ margin:0;background:#050b0b;color:#9aff9a;
+
+ font-family:monospace;padding:18px;
+
+}
+
+header{border-bottom:1px solid #397b53;padding-bottom:14px}
+
+h1{font-size:23px;letter-spacing:3px}
+
+.small{color:#6c9b7b;font-size:11px}
+
+.panel{
+
+ border:1px solid #286343;padding:14px;
+
+ margin-top:15px;background:#091512;
+
+}
+
+h2{font-size:14px;color:#ffc56a}
+
+.big{font-size:23px;color:#c5ffb4}
+
+button{
+
+ background:#10251b;color:#9aff9a;
+
+ border:1px solid #4caa70;padding:11px;
+
+ margin:4px 2px;font-family:monospace;
+
+}
+
+button:active{background:#315b3e}
+
+#planet{
+
+ height:175px;display:flex;align-items:center;
+
+ justify-content:center;position:relative;
+
+ overflow:hidden;
+
+ background:radial-gradient(ellipse,#173d32,#07100e 70%);
+
+}
+
+#planet span{
+
+ font-size:88px;
+
+ filter:drop-shadow(0 0 15px #64ff9a);
+
+ animation:float 5s ease-in-out infinite;
+
+}
+
+@keyframes float{
+
+ 50%{transform:translateY(-9px)}
+
+}
+
+#log{font-size:12px;line-height:1.9;color:#b9d8bc}
+
+nav{display:flex;flex-wrap:wrap;margin-top:12px}
+
+section{display:none}
+
+section.active{display:block}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="small">SORA OBSERVATION SYSTEM / VERSION 0.1</div>
+
+<h1>SORA WORLD</h1>
+
+<div class="small">UNKNOWN PLANET OBSERVATION PROJECT</div>
+
+</header>
+
+<div class="panel">
+
+<div class="small">OBSERVATION TARGET</div>
+
+<div class="big">PLANET No.001</div>
+
+<div class="small">惑星名称：未確認</div>
+
+</div>
+
+<div class="panel" id="planet">
+
+<span>🪐</span>
+
+</div>
+
+<nav>
+
+<button onclick="show('status')">PLANET</button>
+
+<button onclick="show('life')">LIFE</button>
+
+<button onclick="show('history')">HISTORY</button>
+
+<button onclick="show('contact')">CONTACT</button>
+
+</nav>
+
+<section id="status" class="active">
+
+<div class="panel">
+
+<h2>PLANET DATA / 惑星情報</h2>
+
+<p>名称：未確認</p>
+
+<p>環境：観測中</p>
+
+<p>文明：未確認</p>
+
+<p>生命体：未知</p>
+
+<p>時間単位：未定義</p>
+
+<p>観測開始から：<span id="elapsed">0</span> 観測刻</p>
+
+</div>
+
+</section>
+
+<section id="life">
+
+<div class="panel">
+
+<h2>LIFE / 生命体観測</h2>
+
+<p id="lifeText">現在、知的生命体は確認されていません。</p>
+
+<button onclick="discover()">生命反応をスキャン</button>
+
+</div>
+
+</section>
+
+<section id="history">
+
+<div class="panel">
+
+<h2>HISTORY / 惑星の歴史</h2>
+
+<div id="log">観測記録なし。<br>この星の歴史は、これから始まります。</div>
+
+</div>
+
+</section>
+
+<section id="contact">
+
+<div class="panel">
+
+<h2>CONTACT / 観測者通信</h2>
+
+<p>通信チャンネル：未接続</p>
+
+<p>ここには将来、子供空との通信機能が接続されます。</p>
+
+</div>
+
+</section>
+
+<div class="panel">
+
+<h2>OBSERVATION CONTROL</h2>
+
+<button onclick="advance()">時間を進める</button>
+
+<button onclick="scan()">惑星を観測する</button>
+
+<div class="small" id="message">SYSTEM READY...</div>
+
+</div>
+
+<script>
+
+var tick=0;
+
+var records=[];
+
+function show(id){
+
+ document.querySelectorAll('section').forEach(
+
+  function(s){s.classList.remove('active')}
+
+ );
+
+ document.getElementById(id).classList.add('active');
+
+}
+
+function save(){
+
+ try{
+
+ localStorage.setItem('sora_tick',tick);
+
+ localStorage.setItem('sora_records',JSON.stringify(records));
+
+ }catch(e){}
+
+}
+
+function load(){
+
+ try{
+
+ tick=Number(localStorage.getItem('sora_tick'))||0;
+
+ records=JSON.parse(localStorage.getItem('sora_records'))||[];
+
+ }catch(e){}
+
+ update();
+
+}
+
+function update(){
+
+ document.getElementById('elapsed').textContent=tick;
+
+ document.getElementById('log').innerHTML=
+
+ records.length?records.join('<br>'):'観測記録なし。';
+
+}
+
+function addRecord(t){
+
+ records.unshift('['+tick+'刻] '+t);
+
+ save();update();
+
+}
+
+function advance(){
+
+ tick++;
+
+ document.getElementById('message').textContent=
+
+ '惑星時間が進行しました。';
+
+ addRecord('観測時間が1刻進行');
+
+}
+
+function scan(){
+
+ document.getElementById('message').textContent=
+
+ 'スキャン完了。未知の惑星を観測中。';
+
+ addRecord('惑星表面の観測を実施');
+
+}
+
+function discover(){
+
+ document.getElementById('lifeText').textContent=
+
+ '微弱な生命反応を検出。詳細はまだ不明。';
+
+ addRecord('微弱な生命反応を初めて検出');
+
+}
+
+load();
+
+</script>
+
+</body>
+
+</html>
