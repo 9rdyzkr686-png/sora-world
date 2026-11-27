@@ -24,11 +24,13 @@ section.active{display:block}
 #warn{display:none;border-color:#ffa332;color:#ffa332}
 #planet,#soraArt{text-align:center;font-size:12px;line-height:1.15;white-space:pre;color:#5dff7a}
 body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-events:none;background:repeating-linear-gradient(transparent 0,transparent 2px,rgba(0,0,0,.25) 3px)}
+#asciiMap{font-size:12px;line-height:1.3;white-space:pre;overflow:hidden}
+#memoText{height:52px}
 </style>
 </head>
 <body>
 <header>
-<div class="small">SORA OBSERVATION SYSTEM / VERSION 1.0 - COMPLETE</div>
+<div class="small">SORA OBSERVATION SYSTEM / VERSION 1.1</div>
 <h1>SORA WORLD</h1>
 <div class="small">A WORLD THAT LIVES ON.</div>
 </header>
@@ -50,18 +52,21 @@ body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-event
  \     ':'  /
    '-...-'</div></div>
 <div class="panel"><h2>PLANET DATA / 惑星情報</h2><div id="data"></div></div>
+<div class="panel"><h2>観測メモ / OBSERVER MEMO</h2><textarea id="memoText" placeholder="観測メモ（自由に書けます）"></textarea><button id="memoSave">メモを保存</button><button id="memoLog">観測を歴史に記録</button></div>
 </section>
 <section id="planetsec">
 <div class="panel"><h2>PLANET / 惑星の状態・環境</h2><div id="planetData"></div></div>
 <div class="panel"><h2>WORLD HEALTH / 惑星の健全度</h2><div id="healthData"></div></div>
 </section>
 <section id="map">
+<div class="panel"><h2>ASCII MAP / 惑星地図</h2><div id="asciiMap"></div><div class="small">凡例： S=SORA-01 / ?=未探索 / +=生物が3体以上いる地域 / T森 .草原 :砂漠 %湿地 *雪原 ^山脈 ~湖 o海岸 C洞窟 V火山 |川 R遺跡周辺</div></div>
 <div class="panel"><h2>PLANET MAP / 地域・探索</h2><div id="mapList"></div></div>
 <div class="panel"><h2>CIVILIZATION / 文明・集落</h2><div id="civList"></div></div>
 </section>
 <section id="life">
 <div class="panel"><h2>LIFE / 生物一覧</h2><div id="lifeList"></div></div>
 <div class="panel"><h2>DETAIL / 個体詳細</h2><div id="lifeDetail"></div></div>
+<div class="panel"><h2>系図 / 世代と種族</h2><div id="familyList"></div></div>
 </section>
 <section id="sora">
 <div class="panel"><div id="soraArt"></div></div>
@@ -83,11 +88,13 @@ body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-event
 </section>
 <section id="news">
 <div class="panel"><h2>WORLD NEWS / 惑星ニュース</h2><div id="newsList"></div></div>
+<div class="panel"><h2>AI NEWS / AIによる惑星解説</h2><button id="aiNewsBtn">AIに惑星の今を解説してもらう</button><div id="aiNewsOut"></div></div>
 </section>
 <section id="history">
 <div class="panel"><h2>WORLD CHRONICLE / 惑星の歴史</h2>
 <div class="small">記録は削除・上書きしません。訂正は新しい記録として追加します。</div>
-<div id="log"></div><button id="more">さらに表示</button></div>
+<div id="histFilters"></div><input type="text" id="histKw" placeholder="キーワードで探す"><div class="small" id="histCount"></div>
+<div id="log"></div><button id="more">さらに表示</button><button id="histExport">歴史をテキストで書き出す</button></div>
 <div class="panel"><h2>ANCIENT RUINS / 古代遺跡</h2><div id="ruinsList"></div></div>
 <div class="panel"><h2>訂正・注記の追加</h2>
 <div class="small">対象の番号（#）と内容を入力してください。</div>
@@ -129,7 +136,7 @@ var RT=[['ミドリノ平原','草原',40,80,10,0],['ホシフリ森','森林',5
 var SPECIES=['モフリス','カゼトビ','ミズトカゲ','ホシミミ','イワガメモドキ','ユキフクロ','スナトビ','ヒカリドリ','カワセミドリ','ヨルモグ','ハナトゲ'];
 var NAMES=['ポコ','ミル','タロ','ノノ','ピコ','ルル','モモ','ココ','フワ','ゴン','ペロ','ヌヌ','ワワ','キキ','トト','ムム','レレ','ジジ','ソラミ','チビタ'];
 var IMPORTANT={world:1,nature:1,system:1,discovery:1,meeting:1,legacy:1,disaster:1,birth:1,death:1,culture:1,request:1,ai:1};
-var world=null,readOnly=false,limit=50,selectedLife=null;
+var world=null,readOnly=false,limit=50,selectedLife=null,histFilter='all',histKeyword='',histYear=0;
 function $(id){return document.getElementById(id)}
 function msg(t){$('message').textContent=t}
 function warn(t){$('warn').style.display='block';$('warn').textContent='！警告：'+t}
@@ -140,7 +147,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -210,46 +217,39 @@ function generateData(w){
   var home=disc[ri(rng,0,disc.length-1)];
   life.push({id:'life-'+('0'+(i+1)).slice(-2),name:pool[i],species:SPECIES[i%SPECIES.length],ageDays:ri(rng,20,800),hp:ri(rng,70,100),hunger:ri(rng,10,60),fatigue:ri(rng,10,60),home:home,region:home,personality:{curiosity:ri(rng,10,95),caution:ri(rng,10,95),sociability:ri(rng,10,95),activity:ri(rng,10,95),territorial:ri(rng,10,95)},state:'休息中',lifeLog:[],memories:[],relations:{}});
  }
- w.regions=regions;w.life=life;
+ life.forEach(function(c){if(c.parents===undefined)c.parents=null});
+ w.regions=regions;w.life=life;assignCoords(w);
 }
 /* format1 -> format2 移行。旧記録には一切触れず、新規追加のみ */
 function migrateWorld(w){
  ensureCalendar(w);
- if(w.format===6){if(!w.regions||!w.life)generateData(w);initEcosystem(w);formGroupsW(w);initCivilization(w);initSpace(w);initAi(w);return false}
- if(w.format===5){if(!w.regions||!w.life)generateData(w);initEcosystem(w);formGroupsW(w);initCivilization(w);initSpace(w);
-  w.format=6;initAi(w);if(w.seed)w.seed.status='phase1-6';
-  w.chronicle.push({id:uid()+'-mig6',type:'system',text:'PHASE 6へ移行した（FUTURE AI開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
-  return true}
+ var changed=false;
+ if(w.format>=2&&(!w.regions||!w.life))generateData(w);
  if(w.format===1){
   w.format=2;
   if(!w.regions||!w.life)generateData(w);
-  if(w.seed){w.seed.initialLife='SORA-01＋11体（PHASE 2）'}
+  if(w.seed)w.seed.initialLife='SORA-01＋11体（PHASE 2）';
   w.chronicle.push({id:uid()+'-mig2',type:'system',text:'PHASE 1+2へ移行した（暦の正式化とLIVING WORLD開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
+  changed=true;
  }
- var fromF=w.format;
- if(fromF<3){w.format=3;initEcosystem(w);
- w.chronicle.push({id:uid()+'-mig3',type:'system',text:'PHASE 3へ移行した（ECOSYSTEM開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});}
- else initEcosystem(w);
- var fromF4=w.format;
- if(fromF4<4){w.format=4;initCivilization(w);
- w.chronicle.push({id:uid()+'-mig4',type:'system',text:'PHASE 4へ移行した（CIVILIZATION開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});}
- else initCivilization(w);
- w.format=5;
- initSpace(w);
- if(w.seed)w.seed.status='phase1-5';
- w.chronicle.push({id:uid()+'-mig5',type:'system',text:'PHASE 5へ移行した（UNIVERSE開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
- w.format=6;
- initAi(w);
- if(w.seed)w.seed.status='phase1-6';
- w.chronicle.push({id:uid()+'-mig6',type:'system',text:'PHASE 6へ移行した（FUTURE AI開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
- return true;
+ if(w.format===2){w.format=3;initEcosystem(w);w.chronicle.push({id:uid()+'-mig3',type:'system',text:'PHASE 3へ移行した（ECOSYSTEM開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ else if(w.format>2)initEcosystem(w);
+ if(w.format===3){w.format=4;initCivilization(w);w.chronicle.push({id:uid()+'-mig4',type:'system',text:'PHASE 4へ移行した（CIVILIZATION開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ else if(w.format>3)initCivilization(w);
+ if(w.format===4){w.format=5;initSpace(w);if(w.seed)w.seed.status='phase1-5';w.chronicle.push({id:uid()+'-mig5',type:'system',text:'PHASE 5へ移行した（UNIVERSE開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ else if(w.format>4)initSpace(w);
+ if(w.format===5){w.format=6;initAi(w);if(w.seed)w.seed.status='phase1-6';w.chronicle.push({id:uid()+'-mig6',type:'system',text:'PHASE 6へ移行した（FUTURE AI開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ else if(w.format>5)initAi(w);
+ if(w.format===6){w.format=7;initV7(w);if(w.seed)w.seed.status='v1.1';w.chronicle.push({id:uid()+'-mig7',type:'system',text:'v1.1へ移行した（観測強化：地図・表情・歴史検索・系図）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ else if(w.format>6)initV7(w);
+ return changed;
 }
 function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:6,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'phase1-6'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);
+ world={format:7,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'phase1-6'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -526,7 +526,7 @@ function dailyEcosystem(p,wt){
    var cspecies=a.species===b.species?a.species:b.species;
    var newSpecies=false;
    if(mut>0.85){cspecies='シン'+cspecies;newSpecies=true}
-   var child={id:'life-c'+p.day+'-'+world.childCount,name:cname,species:cspecies,ageDays:0,ageFrac:0,hp:90,hunger:30,fatigue:30,home:a.region,region:a.region,personality:{curiosity:clamp(Math.round((a.personality.curiosity+b.personality.curiosity)/2+(Math.random()*20-10)),0,100),caution:clamp(Math.round((a.personality.caution+b.personality.caution)/2+(Math.random()*20-10)),0,100),sociability:clamp(Math.round((a.personality.sociability+b.personality.sociability)/2+(Math.random()*20-10)),0,100),activity:clamp(Math.round((a.personality.activity+b.personality.activity)/2+(Math.random()*20-10)),0,100),territorial:clamp(Math.round((a.personality.territorial+b.personality.territorial)/2+(Math.random()*20-10)),0,100)},state:'誕生',lifeLog:[],memories:[{wt:wt,text:'誕生：'+world.regions[a.region].name}],relations:{},alive:true,generation:Math.max(a.generation||1,b.generation||1)+1,visited:[a.region],deathDay:null,lastBirthDay:-999};
+   var child={id:'life-c'+p.day+'-'+world.childCount,name:cname,species:cspecies,ageDays:0,ageFrac:0,hp:90,hunger:30,fatigue:30,home:a.region,region:a.region,personality:{curiosity:clamp(Math.round((a.personality.curiosity+b.personality.curiosity)/2+(Math.random()*20-10)),0,100),caution:clamp(Math.round((a.personality.caution+b.personality.caution)/2+(Math.random()*20-10)),0,100),sociability:clamp(Math.round((a.personality.sociability+b.personality.sociability)/2+(Math.random()*20-10)),0,100),activity:clamp(Math.round((a.personality.activity+b.personality.activity)/2+(Math.random()*20-10)),0,100),territorial:clamp(Math.round((a.personality.territorial+b.personality.territorial)/2+(Math.random()*20-10)),0,100)},state:'誕生',lifeLog:[],memories:[{wt:wt,text:'誕生：'+world.regions[a.region].name}],relations:{},alive:true,generation:Math.max(a.generation||1,b.generation||1)+1,visited:[a.region],deathDay:null,lastBirthDay:-999,parents:[a.id,b.id]};
    child.relations[a.id]=80;child.relations[b.id]=80;a.relations[child.id]=80;b.relations[child.id]=80;
    world.life.push(child);
    a.lastBirthDay=p.day;b.lastBirthDay=p.day;
@@ -661,7 +661,8 @@ function draw(){
  var p=parts(elapsedNow()),wx=weatherFor(p.day,p.seasonIdx),tp=temperature(p);
  var sora=findLife('sora-01'),li=latestImportant();
  $('data').innerHTML='';
- ['経過日数：'+p.day+'日','天候：'+wx+' / 気温：'+tp+'℃','月：'+moonName(p.day),'記録数：'+world.chronicle.length+'件','生命体：'+aliveCount()+'体（登録'+world.life.length+'体）','発見した地域：'+discoveredCount()+' / '+world.regions.length,'最近のニュース：'+(li?li.text:'なし'),'SORA-01：'+sora.state+'（'+world.regions[sora.region].name+'）','文明：集落'+world.settlements.length+'件','群れ：'+world.groups.length+'組','SORA-01の願い：'+(world.soraRequest?world.soraRequest.text:'なし'),'宇宙：衛星'+(world.space?world.space.moonName:'')+' / '+(spaceEventFor(p.day)?spaceEventFor(p.day).text:'今夜の大きな宇宙現象なし')].forEach(function(t){line($('data'),t)});
+ var mt0=$('memoText');if(mt0&&document.activeElement!==mt0)mt0.value=world.observerMemo||'';
+ ['経過日数：'+p.day+'日','天候：'+wx+' / 気温：'+tp+'℃','月：'+moonName(p.day),'記録数：'+world.chronicle.length+'件','生命体：'+aliveCount()+'体（登録'+world.life.length+'体）','発見した地域：'+discoveredCount()+' / '+world.regions.length,'最近のニュース：'+(li?li.text:'なし'),'SORA-01：'+sora.state+'（'+world.regions[sora.region].name+'）','表情：'+faceOne(sora),'文明：集落'+world.settlements.length+'件','群れ：'+world.groups.length+'組','SORA-01の願い：'+(world.soraRequest?world.soraRequest.text:'なし'),'宇宙：衛星'+(world.space?world.space.moonName:'')+' / '+(spaceEventFor(p.day)?spaceEventFor(p.day).text:'今夜の大きな宇宙現象なし')].forEach(function(t){line($('data'),t)});
  /* PLANET */
  var dl=daylightFor(p.seasonIdx),sr=12-dl/2;
  $('planetData').innerHTML='';
@@ -677,6 +678,7 @@ function draw(){
  var lastDis=null;for(var di2=world.chronicle.length-1;di2>=0;di2--)if(world.chronicle[di2].type==='disaster'){lastDis=world.chronicle[di2];break}
  ['個体数：'+aliveCount()+'（前回比 '+(world.healthTrend>0?'+':'')+world.healthTrend+'）','生物多様性（種族数）：'+spn,'森林・植生の平均：'+vegAvg,'水資源の平均水位：'+watAvg,'森林系地域：'+forests,'水資源の豊かな地域：'+waters,'発見済み地域：'+discoveredCount()+' / '+world.regions.length,'生態系スコア：'+eco+'（植生・水・多様性から算出）','災害状況：'+(lastDis?lastDis.text:'大きな災害なし')].forEach(function(t){line($('healthData'),t)});
  /* MAP */
+ drawAsciiMap();
  var ml=$('mapList');ml.innerHTML='';
  world.regions.forEach(function(r,i){
   if(!r.discovered){line(ml,'地域'+(i+1)+'：未探索');return}
@@ -697,7 +699,7 @@ function draw(){
  var ru=$('ruinsList');ru.innerHTML='';var hasRu=false;
  world.regions.forEach(function(r){(r.points||[]).forEach(function(pt){if(pt.found&&pt.ruins){hasRu=true;line(ru,pt.ruins.name+'（'+r.name+'） 未解読の文字：'+pt.ruins.glyphs+' / '+pt.ruins.decline)}})});
  if(!hasRu)line(ru,'発見された遺跡はまだありません。');
- drawLife();drawSora();drawAiChat();
+ drawLife();drawSora();drawAiChat();drawFamily();
  /* MEMORY */
  var mm=$('memoryList');mm.innerHTML='';var hasM=false;
  world.life.forEach(function(cr){cr.memories.forEach(function(m){hasM=true;line(mm,cr.name+'：'+m.text+(isNum(m.wt)?'［'+stamp(m.wt)+'］':''))})});
@@ -748,11 +750,15 @@ function draw(){
  var log=$('log'),list=world.chronicle,num=Object.create(null),i3;
  log.innerHTML='';
  for(i3=0;i3<list.length;i3++)num[list[i3].id]=i3+1;
- for(i3=list.length-1;i3>=0&&i3>=list.length-limit;i3--){
-  var e=list[i3];
-  line(log,'#'+(i3+1)+' '+(isNum(e.wt)?'['+stamp(e.wt)+'] ':'')+(e.ref?'（#'+(num[e.ref]||'?')+'への訂正）':'')+e.text);
+ var hf=$('histFilters');
+ if(hf&&!hf.children.length){HIST_FILTERS.forEach(function(f){var b=document.createElement('button');b.textContent=f[1];b.onclick=(function(v){return function(){histFilter=v;limit=50;draw()}})(f[0]);hf.appendChild(b)})}
+ var fidx=filteredIdx();
+ $('histCount').textContent='該当 '+fidx.length+'件 / 全'+list.length+'件'+(histYear>0?'（'+histYear+'年）':'');
+ for(i3=fidx.length-1;i3>=0&&i3>=fidx.length-limit;i3--){
+  var e=list[fidx[i3]];
+  line(log,'#'+(fidx[i3]+1)+' '+(isNum(e.wt)?'['+stamp(e.wt)+'] ':'')+(e.ref?'（#'+(num[e.ref]||'?')+'への訂正）':'')+e.text);
  }
- $('more').style.display=list.length>limit?'':'none';
+ $('more').style.display=fidx.length>limit?'':'none';
  var s=world.seed,cc=s.calendar;
  $('seed').textContent='世界ID: '+s.worldId+' / 地形SEED: '+s.terrainSeed+' / 開始: '+new Date(s.epoch).toLocaleString()+' / 1日=現実の'+(cc.dayMs/60000)+'分 / 1季='+cc.daysPerSeason+'日 / 1年='+cc.seasons.length+'季 / 週='+cc.week.length+'日 / 月周期='+cc.moonCycleDays+'日 / 気候周期='+cc.climateCycleYears+'年 / データ形式: v'+world.format;
 }
@@ -773,7 +779,7 @@ function drawLife(){
 }
 function drawSora(){
  var cr=findLife('sora-01'),ps=cr.personality;
- $('soraArt').textContent='   /\\__\/\\\n  ( o.o )===================\n   |   |  ~~~~~~~~~~~~~~~~~~\n  ‾‾   ‾‾   ‾‾  ‾‾  ‾‾';
+ $('soraArt').textContent=expressionFor(cr);
  $('soraData').innerHTML='';
  ['名前：SORA-01 / 種族：'+cr.species,'年齢：'+cr.ageDays+'日（'+stageOf(cr)+'） / 体力：'+cr.hp,'空腹：'+cr.hunger+'（0=満腹〜100=空腹） / 疲労：'+cr.fatigue,'現在地：'+world.regions[cr.region].name+' / 住みか：'+world.regions[cr.home].name,'状態：'+cr.state,'性格： 好奇心'+ps.curiosity+' 警戒心'+ps.caution+' 社交性'+ps.sociability+' 活動性'+ps.activity+' 縄張り'+ps.territorial].forEach(function(t){line($('soraData'),t)});
  if(cr.memories.length){line($('soraData'),'-- 記憶 --');cr.memories.forEach(function(m){line($('soraData'),m.text)})}
@@ -932,6 +938,151 @@ function testAi(){
   xhr.send(JSON.stringify({messages:[{role:'user',content:'こんにちは。短く返事して。'}],model:'openai-fast'}));
  }catch(e){$('aiStatus').textContent='回線テスト：失敗（HTTP 0）'}
 }
+
+/* ===== v1.1 観測強化 ===== */
+function assignCoords(w){
+ if(!w.regions)return;
+ var need=false,i;
+ for(i=0;i<w.regions.length;i++)if(!isNum(w.regions[i].x)||!isNum(w.regions[i].y))need=true;
+ if(!need)return;
+ var rng=makeRng(((w.seed.terrainSeed^0x3f3f)>>>0)+98765),used={},guard=0;
+ for(i=0;i<w.regions.length;i++){
+  var x,y,key;
+  do{x=ri(rng,0,23);y=ri(rng,0,9);key=x+','+y;guard++}while(used[key]&&guard<800);
+  used[key]=1;w.regions[i].x=x;w.regions[i].y=y;
+ }
+}
+function initV7(w){
+ if(w.observerMemo===undefined)w.observerMemo='';
+ if(!isNum(w.lastObserverLogDay))w.lastObserverLogDay=-1;
+ assignCoords(w);
+ if(w.life)for(var i=0;i<w.life.length;i++)if(w.life[i].parents===undefined)w.life[i].parents=null;
+}
+var TERRAIN_SYM={'森林':'T','草原':'.','砂漠':':','湿地':'%','雪原':'*','山脈':'^','湖':'~','海岸':'o','洞窟':'C','火山':'V','河川':'|','遺跡周辺':'R'};
+function drawAsciiMap(){
+ var el=$('asciiMap');if(!el||!world.regions)return;
+ var grid=[],x,y;
+ for(y=0;y<10;y++){var row=[];for(x=0;x<24;x++)row.push(' ');grid.push(row)}
+ var sora=findLife('sora-01');
+ world.regions.forEach(function(r,i2){
+  if(!isNum(r.x)||!isNum(r.y))return;
+  var ch;
+  if(sora.region===i2)ch='S';
+  else if(!r.discovered)ch='?';
+  else{var n=0;world.life.forEach(function(cr){if(cr.region===i2&&cr.alive!==false)n++});ch=n>=3?'+':(TERRAIN_SYM[r.terrain]||'.')}
+  grid[r.y][r.x]=ch;
+ });
+ var txt='';
+ for(y=0;y<10;y++)txt+=grid[y].join('')+(y<9?'\n':'');
+ el.textContent=txt;
+}
+function faceOne(cr){
+ if(cr.state==='睡眠中')return '(-.-) Zzz';
+ if(cr.state==='食事中')return '(o.o) もぐもぐ';
+ if(cr.state==='遊び中'||cr.state==='交流中')return '(^.^)';
+ if(cr.state==='探索中')return '(o.o) 探索中';
+ if(cr.hunger>=90||cr.fatigue>=90)return '(>_<) つかれた';
+ if(cr.state==='休息中')return '(-.-) 休憩中';
+ return '(o.o)';
+}
+function expressionFor(cr){
+ var base='   /\\__\/\\\n';
+ var tail='   |   |  ~~~~~~~~~~~~~~~~~~\n  ‾‾   ‾‾   ‾‾  ‾‾  ‾‾\n';
+ var i,surp=false;
+ for(i=world.chronicle.length-1;i>=0;i--){var e=world.chronicle[i];if(e.type==='disaster'&&Date.now()-e.rt<120000)surp=true;break}
+ if(surp)return base+'  ( O.O )===================\n'+tail+'  ！ びっくりした！';
+ if(cr.state==='睡眠中')return base+'  ( -.- )=================== Zzz\n'+tail+'  すやすや眠っている';
+ if(cr.state==='食事中')return base+'  ( o.o )=================== * *\n'+tail+'  もぐもぐ食べている';
+ if(cr.state==='遊び中'||cr.state==='交流中')return base+'  ( ^.^ )===================\n'+tail+'  たのしそうにしている';
+ if(cr.state==='探索中')return base+'  ( o.o )===================\n'+tail+'  あるいて探索中';
+ if(cr.hunger>=90||cr.fatigue>=90)return base+'  ( >_< )===================\n'+tail+'  つかれている';
+ if(cr.state==='休息中')return base+'  ( -.- )===================\n'+tail+'  すわって休んでいる';
+ return base+'  ( o.o )===================\n'+tail+'  '+cr.state;
+}
+function drawFamily(){
+ var el=$('familyList');if(!el)return;el.innerHTML='';
+ var gens={},spMap={};
+ world.life.forEach(function(cr){var g=cr.generation||1;if(!gens[g])gens[g]={t:0,a:0};gens[g].t++;if(cr.alive!==false)gens[g].a++;
+  if(!spMap[cr.species])spMap[cr.species]={t:0,a:0};spMap[cr.species].t++;if(cr.alive!==false)spMap[cr.species].a++});
+ var gk=[];for(var k in gens)gk.push(parseInt(k,10));gk.sort(function(a,b){return a-b});
+ gk.forEach(function(g){line(el,'第'+g+'世代：'+gens[g].t+'体（生存'+gens[g].a+'体）')});
+ var has=false;
+ world.life.forEach(function(cr){if(cr.parents&&cr.parents.length===2){has=true;line(el,findLife(cr.parents[0]).name+' × '+findLife(cr.parents[1]).name+' → '+cr.name+'（'+cr.species+'）')}});
+ if(!has)line(el,'親の記録がある子はまだいません。初期世代の親は不明です。');
+ line(el,'-- 種族別 --');
+ for(var s2 in spMap)line(el,s2+'：生存'+spMap[s2].a+' / 全'+spMap[s2].t);
+}
+var HIST_FILTERS=[['all','すべて'],['nature','自然'],['discovery','発見'],['meeting','出会い'],['birth','誕生'],['death','死'],['disaster','災害'],['culture','文明・文化'],['settlement','集落'],['ai','AI'],['system','システム'],['obs','訂正・観測']];
+function histMatch(e){
+ if(histYear>0){if(!isNum(e.wt)||parts(e.wt).year!==histYear)return false}
+ if(histKeyword&&e.text.indexOf(histKeyword)<0)return false;
+ if(histFilter==='all')return true;
+ if(histFilter==='settlement')return e.type==='culture'&&e.text.indexOf('集落')>=0;
+ if(histFilter==='obs')return e.type==='correction'||e.type==='observer';
+ if(histFilter==='system')return e.type==='system'||e.type==='legacy';
+ return e.type===histFilter;
+}
+function filteredIdx(){var a=[],i;for(i=0;i<world.chronicle.length;i++)if(histMatch(world.chronicle[i]))a.push(i);return a}
+function exportHistory(){
+ var lines=[],i;
+ for(i=0;i<world.chronicle.length;i++){var e=world.chronicle[i];lines.push('#'+(i+1)+' '+(isNum(e.wt)?'['+stampFull(e.wt)+'] ':'')+e.text)}
+ var txt=lines.join('\n');
+ var a=document.createElement('a');
+ if(!('download' in a)||!window.Blob||!window.URL){$('out').style.display='block';$('out').value=txt;msg('テキストを表示しました。すべてコピーして保存してください。');return}
+ a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='sora-world-history.txt';
+ document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+function healthSummaryText(){
+ var sp={};world.life.forEach(function(cr){sp[cr.species]=1});var spn=0;for(var k in sp)spn++;
+ var veg=0,wat=0;world.regions.forEach(function(r){veg+=r.vegetation||0;wat+=r.waterLevel||0});
+ var eco=clamp(Math.round((veg/world.regions.length)*0.4+(wat/world.regions.length)*0.3+spn*2+aliveCount()*0.5),0,100);
+ return '個体数'+aliveCount()+'、種族数'+spn+'、発見地域'+discoveredCount()+'/'+world.regions.length+'、集落'+world.settlements.length+'、生態系スコア'+eco;
+}
+function aiNewsLocal(){
+ var p=parts(elapsedNow()),evs=[],i;
+ for(i=world.chronicle.length-1;i>=0&&evs.length<5;i--)if(IMPORTANT[world.chronicle[i].type])evs.push(world.chronicle[i].text);
+ var t='（AI回線が使えないため、観測データからのまとめ）'+p.year+'年'+p.season+' '+p.sday+'日、天候'+weatherFor(p.day,p.seasonIdx)+'。'+healthSummaryText()+'。';
+ if(evs.length)t+='最近の出来事：'+evs.reverse().join('／');
+ return t;
+}
+var aiNewsSending=false;
+function aiNewsSend(){
+ if(aiNewsSending)return;
+ var out=$('aiNewsOut');if(!out)return;out.innerHTML='';line(out,'AI解説を生成中…');
+ if(!world.aiEnabled){out.innerHTML='';line(out,aiNewsLocal());return}
+ aiNewsSending=true;var done=false,retried=false;
+ function fail(kind,status){
+  if(done)return;
+  if(kind!=='quota'){var retryable=(kind==='timeout')||status===0||(status>=500&&status<=599);
+   if(!retried&&retryable){retried=true;out.innerHTML='';line(out,'AI解説を生成中…（再試行中）');setTimeout(function(){if(!done)attempt()},2000);return}}
+  done=true;aiNewsSending=false;out.innerHTML='';line(out,aiNewsLocal());
+  line(out,kind==='quota'?'AIの無料枠を使い切りました。明日9:00に回復します。':(status?'詳細：HTTP '+status:'詳細：接続できませんでした'));
+ }
+ function attempt(){
+  try{
+   var xhr=new XMLHttpRequest();
+   xhr.open('POST','https://text.pollinations.ai/',true);
+   xhr.setRequestHeader('Content-Type','application/json');
+   xhr.timeout=retried?45000:30000;
+   xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4||done)return;
+    var st=0;try{st=xhr.status}catch(e){}
+    var raw='';try{raw=xhr.responseText||''}catch(e){}
+    if(st===402||raw.indexOf('Free limit')>=0){fail('quota',st);return}
+    if(st!==200){fail('http',st);return}
+    var body=raw.replace(/^\s+|\s+$/g,'');
+    if(!body){fail('http',st);return}
+    done=true;aiNewsSending=false;out.innerHTML='';line(out,body.slice(0,800));
+   };
+   xhr.ontimeout=function(){fail('timeout',0)};
+   xhr.onerror=function(){fail('http',0)};
+   var ctx='あなたは惑星観測ニュースの解説者です。次の観測データを日本語で3〜4文で解説してください。'+aiNewsLocal().replace('（AI回線が使えないため、観測データからのまとめ）','');
+   xhr.send(JSON.stringify({messages:[{role:'user',content:ctx}],model:'openai-fast'}));
+  }catch(e){fail('http',0)}
+ }
+ attempt();
+}
+
 function json(){return readOnly&&!world.seed?world.raw:JSON.stringify(world)}
 function importText(text){
  if(readOnly){msg('保護モード中は読み込めません。');return}
@@ -960,11 +1111,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&(world.format===1||world.format===2||world.format===3||world.format===4||world.format===5)){
-   try{put(BAK+'_pre_v6',raw)}catch(e2){}
+  if(world&&world.seed&&world.format<7){
+   try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
@@ -985,7 +1136,7 @@ function init(){
  var found=simulate();
  checkSpaceEvent();
  save();draw();
- if(migrated)msg('PHASE 6へ移行しました。不在中に'+found.days+'日が経過しました。');
+ if(migrated)msg('v1.1へ移行しました。不在中に'+found.days+'日が経過しました。');
  else if(found.days>0||found.seasons>0)msg('不在中に'+found.days+'日が経過し、季節が'+found.seasons+'回移り変わりました。生命が活動しました。');
  $('more').onclick=function(){limit+=50;draw()};
  $('addNote').onclick=function(){
@@ -998,6 +1149,19 @@ function init(){
  $('aiSend').onclick=function(){sendAi()};
  $('aiToggle').onclick=function(){toggleAi()};
  $('aiTest').onclick=function(){testAi()};
+ $('memoSave').onclick=function(){world.observerMemo=$('memoText').value;if(save())msg('観測メモを保存しました。')};
+ $('memoLog').onclick=function(){
+  var day=parts(elapsedNow()).day;
+  if(world.lastObserverLogDay===day){msg('今日はすでに観測を記録しました。');return}
+  var first=$('memoText').value.replace(/^\s+|\s+$/g,'').split('\n')[0];
+  add('observer',first?('観測メモ：'+first):'観測者が観測を行った',elapsedNow());
+  world.lastObserverLogDay=day;world.observerMemo=$('memoText').value;
+  if(save())msg('観測を歴史に記録しました。');
+  draw();
+ };
+ $('aiNewsBtn').onclick=function(){aiNewsSend()};
+ $('histExport').onclick=function(){exportHistory()};
+ $('histKw').oninput=function(){histKeyword=$('histKw').value;limit=50;draw()};
  $('import').onclick=function(){importText($('in').value)};
  $('file').onchange=function(){
   if(!this.files||!this.files[0])return;
