@@ -20,7 +20,7 @@ textarea{width:100%;height:90px;font-size:16px;margin-top:8px}
 input[type=text]{width:100%;padding:9px;font-size:16px}
 section{display:none}
 section.active{display:block}
-#log div,#newsList div,#memoryList div,#relationList div,#mapList div,#lifeDetail div{font-size:12px;line-height:1.6;border-bottom:1px dotted #1d5c2e;padding:5px 0;word-wrap:break-word}
+#log div,#aiLog div,#newsList div,#memoryList div,#relationList div,#mapList div,#lifeDetail div{font-size:12px;line-height:1.6;border-bottom:1px dotted #1d5c2e;padding:5px 0;word-wrap:break-word}
 #warn{display:none;border-color:#ffa332;color:#ffa332}
 #planet,#soraArt{text-align:center;font-size:12px;line-height:1.15;white-space:pre;color:#5dff7a}
 body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-events:none;background:repeating-linear-gradient(transparent 0,transparent 2px,rgba(0,0,0,.25) 3px)}
@@ -28,7 +28,7 @@ body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-event
 </head>
 <body>
 <header>
-<div class="small">SORA OBSERVATION SYSTEM / VERSION 0.8 - PHASE 1-5</div>
+<div class="small">SORA OBSERVATION SYSTEM / VERSION 0.9 - PHASE 1-6</div>
 <h1>SORA WORLD</h1>
 <div class="small">A WORLD THAT LIVES ON.</div>
 </header>
@@ -67,6 +67,12 @@ body:after{content:"";position:fixed;top:0;right:0;bottom:0;left:0;pointer-event
 <div class="panel"><div id="soraArt"></div></div>
 <div class="panel"><h2>SORA-01 / 特別個体</h2><div id="soraData"></div></div>
 <div class="panel"><h2>SORA REQUEST / SORA-01の願い</h2><div id="soraRequest"></div><div id="reqBtns"></div></div>
+<div class="panel"><h2>AI CHAT / SORA-01と会話（PHASE 6）</h2>
+<div class="small">AI回線でSORA-01と自然な言葉で話せます。OFFのときは回線を使わず、いつもの言葉で返事をします。</div>
+<div id="aiLog"></div>
+<input type="text" id="aiInput" placeholder="SORA-01への言葉">
+<button id="aiSend">話す</button><button id="aiToggle">AI: ON</button><button id="aiTest">回線テスト</button>
+<div class="small" id="aiStatus"></div></div>
 <div class="panel"><h2>SORA-01 LIFE LOG</h2><div id="soraLog"></div></div>
 </section>
 <section id="memory">
@@ -122,7 +128,7 @@ var SEASON_TEMP=[14,24,16,4];
 var RT=[['ミドリノ平原','草原',40,80,10,0],['ホシフリ森','森林',50,70,25,0],['アオミ湖','湖',95,60,15,-2],['カワセミ川','河川',90,65,10,0],['スナノ海','砂漠',5,20,35,8],['ヒカリ湿地','湿地',85,55,30,-1],['ユキノ原','雪原',60,25,30,-10],['クロイワ山','山脈',20,30,45,-6],['ナミウチ海岸','海岸',90,70,20,1],['ヒミツ洞窟','洞窟',30,15,55,-3],['カエンの山','火山',10,10,80,10],['コダイの森','遺跡周辺',45,50,40,-1]];
 var SPECIES=['モフリス','カゼトビ','ミズトカゲ','ホシミミ','イワガメモドキ','ユキフクロ','スナトビ','ヒカリドリ','カワセミドリ','ヨルモグ','ハナトゲ'];
 var NAMES=['ポコ','ミル','タロ','ノノ','ピコ','ルル','モモ','ココ','フワ','ゴン','ペロ','ヌヌ','ワワ','キキ','トト','ムム','レレ','ジジ','ソラミ','チビタ'];
-var IMPORTANT={world:1,nature:1,system:1,discovery:1,meeting:1,legacy:1,disaster:1,birth:1,death:1,culture:1,request:1};
+var IMPORTANT={world:1,nature:1,system:1,discovery:1,meeting:1,legacy:1,disaster:1,birth:1,death:1,culture:1,request:1,ai:1};
 var world=null,readOnly=false,limit=50,selectedLife=null;
 function $(id){return document.getElementById(id)}
 function msg(t){$('message').textContent=t}
@@ -134,7 +140,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -209,7 +215,11 @@ function generateData(w){
 /* format1 -> format2 移行。旧記録には一切触れず、新規追加のみ */
 function migrateWorld(w){
  ensureCalendar(w);
- if(w.format===5){if(!w.regions||!w.life)generateData(w);initEcosystem(w);formGroupsW(w);initCivilization(w);initSpace(w);return false}
+ if(w.format===6){if(!w.regions||!w.life)generateData(w);initEcosystem(w);formGroupsW(w);initCivilization(w);initSpace(w);initAi(w);return false}
+ if(w.format===5){if(!w.regions||!w.life)generateData(w);initEcosystem(w);formGroupsW(w);initCivilization(w);initSpace(w);
+  w.format=6;initAi(w);if(w.seed)w.seed.status='phase1-6';
+  w.chronicle.push({id:uid()+'-mig6',type:'system',text:'PHASE 6へ移行した（FUTURE AI開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
+  return true}
  if(w.format===1){
   w.format=2;
   if(!w.regions||!w.life)generateData(w);
@@ -228,14 +238,18 @@ function migrateWorld(w){
  initSpace(w);
  if(w.seed)w.seed.status='phase1-5';
  w.chronicle.push({id:uid()+'-mig5',type:'system',text:'PHASE 5へ移行した（UNIVERSE開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
+ w.format=6;
+ initAi(w);
+ if(w.seed)w.seed.status='phase1-6';
+ w.chronicle.push({id:uid()+'-mig6',type:'system',text:'PHASE 6へ移行した（FUTURE AI開始）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});
  return true;
 }
 function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:5,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'phase1-5'},lastSim:nowMs,season:0,chronicle:[]};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);
+ world={format:6,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'phase1-6'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -377,6 +391,11 @@ function initCivilization(w){
  if(!isNum(w.requestCooldownDay))w.requestCooldownDay=-999;
  for(i=0;i<w.groups.length;i++)if(!w.groups[i].culture)w.groups[i].culture=makeCulture(rng);
  for(i=0;i<w.settlements.length;i++)if(!w.settlements[i].culture)w.settlements[i].culture=makeCulture(rng);
+}
+function initAi(w){
+ if(!w.aiChat)w.aiChat=[];
+ if(w.aiEnabled===undefined)w.aiEnabled=true;
+ if(w.aiFirstDone===undefined)w.aiFirstDone=false;
 }
 function settlementLevel(st){
  var lv=0;for(var i=0;i<CIV_THRESH.length;i++)if(st.techPoints>=CIV_THRESH[i])lv=i;return lv;
@@ -678,7 +697,7 @@ function draw(){
  var ru=$('ruinsList');ru.innerHTML='';var hasRu=false;
  world.regions.forEach(function(r){(r.points||[]).forEach(function(pt){if(pt.found&&pt.ruins){hasRu=true;line(ru,pt.ruins.name+'（'+r.name+'） 未解読の文字：'+pt.ruins.glyphs+' / '+pt.ruins.decline)}})});
  if(!hasRu)line(ru,'発見された遺跡はまだありません。');
- drawLife();drawSora();
+ drawLife();drawSora();drawAiChat();
  /* MEMORY */
  var mm=$('memoryList');mm.innerHTML='';var hasM=false;
  world.life.forEach(function(cr){cr.memories.forEach(function(m){hasM=true;line(mm,cr.name+'：'+m.text+(isNum(m.wt)?'［'+stamp(m.wt)+'］':''))})});
@@ -788,6 +807,131 @@ function respondRequest(label){
  world.soraRequest=null;world.requestCooldownDay=parts(wt).day;
  save();draw();msg('SORA-01の願いに応えました。');
 }
+function traitWord(v){if(v>=75)return 'とても強い';if(v>=55)return '強い';if(v>=35)return 'ふつう';return '弱い'}
+function levelWord(v){if(v>=70)return '高い';if(v>=40)return '中くらい';return '低い'}
+/* PHASE 6: SORA-01の世界理解コンテキストを組み立てる（純関数に近い形で検証可能にする） */
+function buildAiContext(){
+ var sora=findLife('sora-01'),p=parts(elapsedNow()),wx=weatherFor(p.day,p.seasonIdx),ps=sora.personality,i;
+ var s='あなたは惑星No.001に住む特別な生命体SORA-01です。観測者（ユーザー）と話しています。';
+ s+='性格：好奇心'+traitWord(ps.curiosity)+'、警戒心'+traitWord(ps.caution)+'、社交性'+traitWord(ps.sociability)+'、活動性'+traitWord(ps.activity)+'。';
+ s+='今の状態：'+sora.state+'、場所は'+world.regions[sora.region].name+'（'+world.regions[sora.region].terrain+'）、空腹は'+levelWord(sora.hunger)+'、疲労は'+levelWord(sora.fatigue)+'、成長段階は'+stageOf(sora)+'。';
+ s+='今の惑星：'+p.year+'年'+p.season+' '+p.sday+'日、天候'+wx+'、月は'+moonName(p.day)+'。';
+ var mems=sora.memories.slice(-3);
+ if(mems.length){s+='最近の記憶：';for(i=0;i<mems.length;i++)s+='「'+mems[i].text.slice(0,45)+'」'}
+ var bestId=null,bestScore=-1;for(var k in sora.relations){if(sora.relations[k]>bestScore){bestScore=sora.relations[k];bestId=k}}
+ if(bestId)s+='一番親しい仲間は'+findLife(bestId).name+'（'+relLabel(bestScore)+'）。';
+ var evs=[];
+ for(i=world.chronicle.length-1;i>=0&&evs.length<3;i--){if(IMPORTANT[world.chronicle[i].type])evs.push(world.chronicle[i].text.slice(0,45))}
+ if(evs.length){s+='最近の出来事：';for(i=evs.length-1;i>=0;i--)s+='「'+evs[i]+'」'}
+ s+='返事は日本語で、SORA-01らしく、1〜3文の短い文で。自分の記憶や惑星の出来事に触れてください。';
+ return s;
+}
+var aiSending=false;
+function drawAiChat(){
+ var el=$('aiLog');if(!el)return;el.innerHTML='';
+ var list=world.aiChat||[];
+ if(!list.length)line(el,'（まだ会話はありません。SORA-01に話しかけてみてください）');
+ list.slice(-30).forEach(function(m){line(el,(m.r==='u'?'観測者：':'SORA-01：')+m.t)});
+ var tg=$('aiToggle');if(tg)tg.textContent='AI: '+(world.aiEnabled?'ON':'OFF');
+}
+function pushAi(r,t){if(!world.aiChat)world.aiChat=[];world.aiChat.push({r:r,t:t});while(world.aiChat.length>30)world.aiChat.shift()}
+function cannedReply(){
+ var sora=findLife('sora-01'),p=parts(elapsedNow()),wx=weatherFor(p.day,p.seasonIdx),lines;
+ if(sora.state==='睡眠中')lines=['ねむい…でも観測者の声は聞こえているよ。'];
+ else if(sora.hunger>=70)lines=['お腹が空いたなあ。'+world.regions[sora.region].name+'で何か食べたい。'];
+ else if(sora.fatigue>=75)lines=['ちょっと疲れた。少し休んでから話そう。'];
+ else lines=['今日は'+wx+'だね。'+world.regions[sora.region].name+'でのんびりしているよ。','観測者と話すと嬉しい。惑星は今日も生きているよ。',moonName(p.day)+'が見える夜になりそう。楽しみだな。'];
+ return '（AI回線が混んでいるため、いつもの言葉で）'+lines[Math.floor(Math.random()*lines.length)];
+}
+function aiSucceed(text,reply){
+ pushAi('a',reply);
+ var sora=findLife('sora-01'),wt=elapsedNow();
+ logLife(sora,'観測者とAI回線で話した：'+text.slice(0,30),wt);
+ if(!world.aiFirstDone){
+  world.aiFirstDone=true;
+  addMemory(sora,'初めて観測者と言葉を交わした',wt);
+  add('ai','AI回線が開通し、SORA-01が観測者と初めて言葉を交わした',wt);
+ }
+ save();drawAiChat();drawSora();
+ $('aiStatus').textContent='AI回線で返事が届きました。';
+}
+function aiFail(kind,status){
+ pushAi('a',cannedReply());
+ save();drawAiChat();
+ if(kind==='quota')$('aiStatus').textContent='AIの無料枠を使い切りました。明日9:00に回復します。いつもの言葉で返事をしています。';
+ else if(kind==='http'&&status)$('aiStatus').textContent='AI回線が混んでいます（詳細：HTTP '+status+'）。いつもの言葉で返事をしています。';
+ else $('aiStatus').textContent='AI回線が混んでいます。いつもの言葉で返事をしています。';
+}
+function sendAi(){
+ if(aiSending)return;
+ var text=$('aiInput').value.replace(/^\s+|\s+$/g,'');
+ if(!text){msg('SORA-01への言葉を入力してください。');return}
+ $('aiInput').value='';
+ var hist=[],ac=world.aiChat||[],hi;
+ for(hi=Math.max(0,ac.length-6);hi<ac.length;hi++)hist.push({role:ac[hi].r==='u'?'user':'assistant',content:ac[hi].t.slice(0,200)});
+ pushAi('u',text);save();drawAiChat();
+ if(!world.aiEnabled){pushAi('a',cannedReply());save();drawAiChat();$('aiStatus').textContent='AIはOFFです。回線を使わず、いつもの言葉で返事をしています。';return}
+ aiSending=true;$('aiSend').disabled=true;
+ $('aiStatus').textContent='AI回線で送信中…';
+ var done=false,retried=false;
+ function failOrRetry(kind,status){
+  if(done)return;
+  if(kind==='quota'){done=true;aiSending=false;$('aiSend').disabled=false;aiFail('quota',status);return}
+  var retryable=(kind==='timeout')||status===0||(status>=500&&status<=599);
+  if(!retried&&retryable){retried=true;$('aiStatus').textContent='AI回線で送信中…（再試行中）';setTimeout(function(){if(!done)attempt()},2000);return}
+  done=true;aiSending=false;$('aiSend').disabled=false;aiFail(kind,status);
+ }
+ function attempt(){
+  try{
+   var xhr=new XMLHttpRequest();
+   xhr.open('POST','https://text.pollinations.ai/',true);
+   xhr.setRequestHeader('Content-Type','application/json');
+   xhr.timeout=retried?45000:30000;
+   xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4||done)return;
+    var st=0;try{st=xhr.status}catch(e){}
+    var raw='';try{raw=xhr.responseText||''}catch(e){}
+    if(st===402||raw.indexOf('Free limit')>=0){failOrRetry('quota',st);return}
+    if(st!==200){failOrRetry('http',st);return}
+    var body=raw.replace(/^\s+|\s+$/g,'');
+    if(!body){failOrRetry('http',st);return}
+    done=true;aiSending=false;$('aiSend').disabled=false;
+    aiSucceed(text,body.slice(0,600));
+   };
+   xhr.ontimeout=function(){failOrRetry('timeout',0)};
+   xhr.onerror=function(){var st2=0;try{st2=xhr.status}catch(e){}failOrRetry('http',st2)};
+   var msgs=[{role:'system',content:buildAiContext()}],j;
+   for(j=0;j<hist.length;j++)msgs.push(hist[j]);
+   msgs.push({role:'user',content:text});
+   xhr.send(JSON.stringify({messages:msgs,model:'openai-fast'}));
+  }catch(e){failOrRetry('http',0)}
+ }
+ attempt();
+}
+function toggleAi(){
+ world.aiEnabled=!world.aiEnabled;save();drawAiChat();
+ $('aiStatus').textContent='AI回線を'+(world.aiEnabled?'ON':'OFF')+'にしました。';
+}
+function testAi(){
+ $('aiStatus').textContent='回線テスト中…';
+ var t0=Date.now(),tdone=false;
+ try{
+  var xhr=new XMLHttpRequest();
+  xhr.open('POST','https://text.pollinations.ai/',true);
+  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.timeout=30000;
+  xhr.onreadystatechange=function(){
+   if(xhr.readyState!==4||tdone)return;tdone=true;
+   var st=0;try{st=xhr.status}catch(e){}
+   var secs=Math.round((Date.now()-t0)/100)/10;
+   if(st===200)$('aiStatus').textContent='回線テスト：成功（'+secs+'秒）';
+   else $('aiStatus').textContent='回線テスト：失敗（HTTP '+st+'）';
+  };
+  xhr.ontimeout=function(){if(!tdone){tdone=true;$('aiStatus').textContent='回線テスト：失敗（タイムアウト）'}};
+  xhr.onerror=function(){if(!tdone){tdone=true;$('aiStatus').textContent='回線テスト：失敗（HTTP 0）'}};
+  xhr.send(JSON.stringify({messages:[{role:'user',content:'こんにちは。短く返事して。'}],model:'openai-fast'}));
+ }catch(e){$('aiStatus').textContent='回線テスト：失敗（HTTP 0）'}
+}
 function json(){return readOnly&&!world.seed?world.raw:JSON.stringify(world)}
 function importText(text){
  if(readOnly){msg('保護モード中は読み込めません。');return}
@@ -816,11 +960,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&(world.format===1||world.format===2||world.format===3||world.format===4)){
-   try{put(BAK+'_pre_v5',raw)}catch(e2){}
+  if(world&&world.seed&&(world.format===1||world.format===2||world.format===3||world.format===4||world.format===5)){
+   try{put(BAK+'_pre_v6',raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
@@ -841,7 +985,7 @@ function init(){
  var found=simulate();
  checkSpaceEvent();
  save();draw();
- if(migrated)msg('PHASE 5へ移行しました。不在中に'+found.days+'日が経過しました。');
+ if(migrated)msg('PHASE 6へ移行しました。不在中に'+found.days+'日が経過しました。');
  else if(found.days>0||found.seasons>0)msg('不在中に'+found.days+'日が経過し、季節が'+found.seasons+'回移り変わりました。生命が活動しました。');
  $('more').onclick=function(){limit+=50;draw()};
  $('addNote').onclick=function(){
@@ -851,6 +995,9 @@ function init(){
   if(save()){$('note').value='';$('refNo').value='';msg('追記しました。')}
   draw();
  };
+ $('aiSend').onclick=function(){sendAi()};
+ $('aiToggle').onclick=function(){toggleAi()};
+ $('aiTest').onclick=function(){testAi()};
  $('import').onclick=function(){importText($('in').value)};
  $('file').onchange=function(){
   if(!this.files||!this.files[0])return;
