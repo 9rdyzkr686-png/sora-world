@@ -1554,7 +1554,7 @@ function drawSoraAlbumV15(){
   line(pl,'お気に入りの場所：'+(favs.length?favs.map(function(fi){return world.regions[fi].name}).join('、'):'まだなし'));
   var mps=world.soraLife.memoryPlaces||{},mk=Object.keys(mps);
   if(!mk.length)line(pl,'思い出の場所：まだありません。');
-  mk.forEach(function(k2){line(pl,'思い出の場所：'+world.regions[k2].name+' ― '+mps[k2].text)});
+  mk.forEach(function(k2){var mv=mps[k2];line(pl,'思い出の場所：'+world.regions[k2].name+' ― '+(typeof mv==='string'?mv:(mv.text||'')))});
   line(pl,'寝起きの習慣：ごろごろ '+world.soraLife.lazyDays+'日 / すっきり '+world.soraLife.earlyDays+'日');
  }
 }
