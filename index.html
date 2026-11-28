@@ -140,7 +140,7 @@ body.lite *{animation:none!important}
 <div class="panel"><h2>MEMORY FRAGMENT / 重要な記憶</h2><div id="memoryList"></div></div>
 </section>
 <section id="relation">
-<div class="panel"><h2>RELATIONSHIP NETWORK / 関係ネットワーク</h2><canvas id="relNet" class="bigcv" width="288" height="190"></canvas><div class="small">中心はSORA-01。線の色：ピンク=親友・家族級 / 緑=友人 / 黄=顔見知り。個体をタップすると関係を表示します。</div><div id="relNetDetail"></div></div>
+<div class="panel"><h2>RELATIONSHIP NETWORK / 関係ネットワーク</h2><canvas id="relNet" class="bigcv" width="288" height="190"></canvas><div class="small">中心はSORA-01。線は友人以上の絆だけを表示（SORA-01の線は知り合い以上）。色：ピンク=親友 / 緑=友人 / 黄=知り合い（対SORA-01） / 金=家族。個体をタップすると関係を表示します。</div><div id="relNetDetail"></div></div>
 <div class="panel"><h2>RELATIONSHIP MAP / 関係</h2><div id="relationList"></div></div>
 </section>
 <section id="news">
@@ -212,7 +212,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -342,6 +342,7 @@ function migrateWorld(w){
  if(w.format===31){w.format=32;initV32(w);if(w.seed)w.seed.status='v0.8.2-polish2';w.chronicle.push({id:uid()+'-mig32',type:'system',text:'Ver.0.8.2 POLISH 2へ移行した（SORA-01の横向きアクションビュー、REPLAYの世界の統計、ピクセル世界に空の訪問の印、MEMORYのアルバム調デザインを開始。既存の歴史と個体情報は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===32){w.format=33;initV33(w);if(w.seed)w.seed.status='v0.8.3-cleanup';w.chronicle.push({id:uid()+'-mig33',type:'system',text:'Ver.0.8.3 CLEANUPへ移行した（ASCII地図と文字アート表示を引退、関係ネットワークの線を関係20以上に間引き、性格表示を整数化。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===33){w.format=34;initV34(w);if(w.seed)w.seed.status='v0.8.4-designsheet-memory';w.chronicle.push({id:uid()+'-mig34',type:'system',text:'Ver.0.8.4へ移行した（DESIGN SHEETをMEMORYタブのデザイン資料として移設。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ if(w.format===34){w.format=35;initV35(w);if(w.seed)w.seed.status='v0.8.5-relnet-fix';w.chronicle.push({id:uid()+'-mig35',type:'system',text:'Ver.0.8.5へ移行した（関係ネットワークの表示基準を修正：友人以上の絆とSORA-01の知り合いの線だけを表示。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  else if(w.format>15)initV16(w);
  return changed;
 }
@@ -349,8 +350,8 @@ function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:34,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v0.8.4-designsheet-memory'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);
+ world={format:35,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v0.8.5-relnet-fix'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -1786,6 +1787,7 @@ function driftTrait(cr,key,amt){
  ps[key]=clamp(Math.round((ps[key]+amt)*10)/10,Math.max(5,base-25),Math.min(99,base+25));
 }
 function stageLabel4(cr){if(cr.ageDays<100)return '幼少期';if(cr.ageDays<400)return '成長期';if(cr.ageDays<900)return '成熟期';return '老年期'}
+function initV35(w){initV34(w)}
 function initV34(w){initV33(w)}
 function initV33(w){initV32(w);if(!w.visual4)w.visual4={};w.visual4.cleanup=true}
 function initV32(w){initV31(w);if(!w.visual4)w.visual4={};w.visual4.polish2=true}
@@ -1951,7 +1953,7 @@ function drawRelNet(){
  others.forEach(function(cr,i){var ang=i/Math.max(1,others.length)*6.283;relNetNodes.push({cr:cr,x:144+Math.cos(ang)*105,y:95+Math.sin(ang)*72})});
  function nodeOf(id){for(var i=0;i<relNetNodes.length;i++)if(relNetNodes[i].cr.id===id)return relNetNodes[i];return null}
  relNetNodes.forEach(function(nd){
-  for(var k in nd.cr.relations){var sc=nd.cr.relations[k];if(sc<20)continue;var ot=nodeOf(k);if(!ot)continue;
+  for(var k in nd.cr.relations){var sc=nd.cr.relations[k];var isSoraEdge=(nd.cr.id==='sora-01'||k==='sora-01');if(sc<(isSoraEdge?20:45))continue;var ot=nodeOf(k);if(!ot)continue;
    if(nd.cr.id>k)continue;
    ctx.strokeStyle=sc>=75?'#ff7ab0':sc>=45?'#5dff7a':sc>=20?'#facc15':'#3f6212';
    ctx.beginPath();ctx.moveTo(nd.x,nd.y);ctx.lineTo(ot.x,ot.y);ctx.stroke()}
@@ -2830,11 +2832,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&world.format<34){
+  if(world&&world.seed&&world.format<35){
    try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
