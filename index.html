@@ -222,7 +222,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54&&w.format!==55&&w.format!==56&&w.format!==57&&w.format!==58&&w.format!==59)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54&&w.format!==55&&w.format!==56&&w.format!==57&&w.format!==58&&w.format!==59&&w.format!==60)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -255,9 +255,10 @@ function save(){
   put(KEY,JSON.stringify(world));return true;
  }catch(e){warn('保存できませんでした。SYSTEM画面からJSONを書き出してください。');return false}
 }
-function add(type,text,wt,id,ref){
+function add(type,text,wt,id,ref,cause){
  var e={id:id||uid(),type:type,text:text,wt:wt,rt:Date.now()};
  if(ref)e.ref=ref;
+ if(cause)e.cause=cause;
  world.chronicle.push(e);
 }
 /* --- seeded RNG (LCG, ES5) --- */
@@ -377,6 +378,7 @@ function migrateWorld(w){
  if(w.format===56){w.format=57;initV57(w);if(w.seed)w.seed.status='v1.2-step6';w.chronicle.push({id:uid()+'-mig57',type:'system',text:'GAP CLOSURE STEP 6へ移行した（長期不在の扱い：観測が長く途切れた場合、処理しきれない期間の出来事を捏造せず、生命の年齢だけを時間分進め、歴史に「要約処理で進めた」と正直な記録を1件残すようになった）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===57){w.format=58;initV58(w);if(w.seed)w.seed.status='v1.2-step7';w.chronicle.push({id:uid()+'-mig58',type:'system',text:'GAP CLOSURE STEP 7へ移行した（イベントの重要度分け：歴史の記録を★★★歴史級・★★重要・通常の3段階に分類し、MAINの観測イベントとNEWSに印と通算件数を表示するようになった。イベントの発生そのものは変更していない）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===58){w.format=59;initV59(w);if(w.seed)w.seed.status='v1.3-step1';w.chronicle.push({id:uid()+'-mig59',type:'system',text:'LIVING UNIVERSE STEP 1へ移行した（世界の整合性検査：SYSTEM画面で個体IDの重複・存在しない親への参照・範囲外の地域や数値・歴史の時系列などを読み取り専用で検査し、正常/注意/警告/重大で報告するようになった。検査はデータを変更しない）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ if(w.format===59){w.format=60;initV60(w);if(w.seed)w.seed.status='v1.3-step2';w.chronicle.push({id:uid()+'-mig60',type:'system',text:'LIVING UNIVERSE STEP 2へ移行した（因果関係の構造化：これから発生する主要な出来事には原因フィールドが付き、NEWSとHISTORYで「（原因：…）」と表示されるようになった。過去の記録は変更していない）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  else if(w.format>15)initV16(w);
  return changed;
 }
@@ -384,8 +386,8 @@ function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:59,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.3-step1'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);
+ world={format:60,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.3-step2'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -575,7 +577,7 @@ function dailyLiving(p,wt){
  }
  for(i=0;i<world.groups.length;i++){var g=world.groups[i];r=world.regions[g.homeRegion];
   if(r&&r.food<20){var b2=-1,bf2=-1;for(var j2=0;j2<world.regions.length;j2++){var r3=world.regions[j2];if(r3.discovered&&r3.food>bf2){bf2=r3.food;b2=j2}}
-   if(b2>=0&&bf2>50){add('life',g.name+'が食料を求めて'+world.regions[b2].name+'へ移住した（因果：'+r.name+'の食料不足）',wt);g.homeRegion=b2}}
+   if(b2>=0&&bf2>50){add('life',g.name+'が食料を求めて'+world.regions[b2].name+'へ移住した（因果：'+r.name+'の食料不足）',wt,null,null,'食料不足：'+r.name+'の食料が減ったため');g.homeRegion=b2}}
  }
  if(tp<=4){for(i=0;i<world.life.length;i++){if(world.life[i].alive!==false)world.life[i].fatigue=clamp(world.life[i].fatigue+4,0,100)}fx('cold','因果：寒さが厳しく、生物たちの活動が鈍っている',5)}
  for(i=0;i<world.settlements.length;i++){var st=world.settlements[i];if(st.level>=3){r=world.regions[st.region];r.vegetation=clamp(r.vegetation-0.6,0,100);fx('civ'+st.id,'因果：'+st.name+'の発展で資源消費が増え、周辺の植生が少し減った',15)}}
@@ -664,7 +666,7 @@ function dailyEvolution(p,wt){
  if(p.day%30!==0)return;var E=world.evolution;if(!E)return;
  var aliveBy={},i;for(i=0;i<world.life.length;i++){var c=world.life[i];E.knownSpecies[c.species]=1;if(c.alive!==false)aliveBy[c.species]=(aliveBy[c.species]||0)+1}
  for(var sp in E.knownSpecies){if(sp==='ホシクイ（特別個体）')continue;
-  if(!aliveBy[sp]&&!E.extinct.some(function(x){return x.species===sp})){E.extinct.push({species:sp,day:p.day});add('extinction','種の記録：'+sp+' がこの惑星から姿を消した（絶滅として歴史に記録）',wt);world.newsExtra.push({wt:wt,text:'進化：'+sp+'が絶滅した'});while(world.newsExtra.length>20)world.newsExtra.shift()}}
+  if(!aliveBy[sp]&&!E.extinct.some(function(x){return x.species===sp})){E.extinct.push({species:sp,day:p.day});add('extinction','種の記録：'+sp+' がこの惑星から姿を消した（絶滅として歴史に記録）',wt,null,null,'生存する個体がいなくなったため');world.newsExtra.push({wt:wt,text:'進化：'+sp+'が絶滅した'});while(world.newsExtra.length>20)world.newsExtra.shift()}}
  var byReg={};for(i=0;i<world.life.length;i++){var c2=world.life[i];if(c2.alive===false)continue;var k2=c2.species+'|'+c2.region;byReg[k2]=(byReg[k2]||0)+1}
  for(var k3 in byReg){var pr=k3.split('|'),spn=pr[0],rgi=parseInt(pr[1],10);
   if(byReg[k3]>=4&&aliveBy[spn]&&byReg[k3]/aliveBy[spn]>=0.6&&!E.variants[k3]&&Math.random()<0.2){
@@ -921,7 +923,7 @@ function dailyEcosystem(p,wt){
   if(dtype==='洪水')reg.waterLevel=clamp(reg.waterLevel+25,0,100);
   if(dtype==='干ばつ')reg.waterLevel=clamp(reg.waterLevel-25,0,100);
   world.lastDisasterDay=p.day;world.lastDisasterRegion=ri2;
-  add('disaster',reg.name+'で'+dtype+'が発生した',wt);
+  add('disaster',reg.name+'で'+dtype+'が発生した',wt,null,null,'惑星の自然変動（地形：'+reg.terrain+'）');
   for(j=0;j<world.life.length;j++){var dc=world.life[j];
    if(dc.alive!==false&&dc.region===ri2){dc.hp=clamp(dc.hp-25,5,100);dc.hunger=clamp(dc.hunger+20,0,100);addMemory(dc,'危険な体験：'+reg.name+'の'+dtype,wt);logLife(dc,reg.name+'で'+dtype+'に遭った',wt);bumpTrait(dc,'caution',wt);
     var dests=[],dj;for(dj=0;dj<world.regions.length;dj++)if(dj!==ri2)dests.push(dj);
@@ -1208,7 +1210,7 @@ function draw(){
  var nl=$('newsList');nl.innerHTML='';var cnt=0;
  var t3=0,t2=0;world.chronicle.forEach(function(ce){var tt=impTier(ce);if(tt===3)t3++;else if(tt===2)t2++});
  line(nl,'イベント重要度：★★★ 歴史級 通算'+t3+'件 ／ ★★ 重要 通算'+t2+'件','dim');
- for(var n2=world.chronicle.length-1;n2>=0&&cnt<50;n2--){var e2=world.chronicle[n2];if(IMPORTANT[e2.type]){line(nl,(isNum(e2.wt)?'['+stamp(e2.wt)+'] ':'')+'［'+(NEWS_CAT[e2.type]||'記録')+'］'+impMark(e2)+e2.text);cnt++}}
+ for(var n2=world.chronicle.length-1;n2>=0&&cnt<50;n2--){var e2=world.chronicle[n2];if(IMPORTANT[e2.type]){line(nl,(isNum(e2.wt)?'['+stamp(e2.wt)+'] ':'')+'［'+(NEWS_CAT[e2.type]||'記録')+'］'+impMark(e2)+e2.text+(e2.cause?'（原因：'+e2.cause+'）':''));cnt++}}
  world.newsExtra.slice().reverse().forEach(function(x){line(nl,(isNum(x.wt)?'['+stamp(x.wt)+'] ':'')+x.text)});
  if(!cnt&&!world.newsExtra.length)line(nl,'ニュースはまだありません。');
  /* SPACE */
@@ -1259,7 +1261,7 @@ function draw(){
  for(i3=fidx.length-1;i3>=0&&i3>=fidx.length-limit;i3--){
   var e=list[fidx[i3]];
   if(isNum(e.wt)){var yr2=parts(e.wt).year;if(yr2!==lastYr){lastYr=yr2;var yh=document.createElement('div');yh.className='yrhead';yh.textContent='=== 第'+yr2+'年 ===';log.appendChild(yh)}}
-  line(log,'#'+(fidx[i3]+1)+' '+(isNum(e.wt)?'['+stamp(e.wt)+'] ':'')+(e.ref?'（#'+(num[e.ref]||'?')+'への訂正）':'')+e.text);
+  line(log,'#'+(fidx[i3]+1)+' '+(isNum(e.wt)?'['+stamp(e.wt)+'] ':'')+(e.ref?'（#'+(num[e.ref]||'?')+'への訂正）':'')+e.text+(e.cause?'（原因：'+e.cause+'）':''));
  }
  $('more').style.display=fidx.length>limit?'':'none';
  var s=world.seed,cc=s.calendar;
@@ -1842,6 +1844,7 @@ function driftTrait(cr,key,amt){
  ps[key]=clamp(Math.round((ps[key]+amt)*10)/10,Math.max(5,base-25),Math.min(99,base+25));
 }
 function stageLabel4(cr){if(cr.ageDays<100)return '幼少期';if(cr.ageDays<400)return '成長期';if(cr.ageDays<900)return '成熟期';return '老年期'}
+function initV60(w){initV59(w);if(!w.visual6)w.visual6={};w.visual6.causeField=true}
 function initV59(w){initV58(w);if(!w.visual6)w.visual6={};w.visual6.integrity=true}
 function drawIntegrity(){var el=$('integrityInfo');if(!el||!world)return;el.innerHTML='';
  var sev=0,notes=[];function flag(level,text){if(level>sev)sev=level;notes.push({level:level,text:text})}
@@ -3193,11 +3196,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&world.format<59){
+  if(world&&world.seed&&world.format<60){
    try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
