@@ -3123,6 +3123,12 @@ function drawObserve(){var el=$('observeBody');if(!el||!world||!world.life)retur
  var lg=cr.lifeLog&&cr.lifeLog.length?cr.lifeLog[cr.lifeLog.length-1]:null;if(lg)ll('最近の出来事：'+(lg.text||lg),'dim');
  if(world.observer&&((world.observer.favLife&&world.observer.favLife.length)||(world.observer.favRegions&&world.observer.favRegions.length))){ll('-- ★ お気に入り --','dim');(world.observer.favLife||[]).forEach(function(id){var f=findLife(id);if(f)ll('★ '+f.name+'（'+f.species+'）'+world.regions[f.region].name+' ／ '+f.state+(f.alive===false?'［死亡］':''))});(world.observer.favRegions||[]).forEach(function(ri){if(world.regions[ri])ll('★ 地域：'+world.regions[ri].name)})}
 }
+var PX_HSTEP=4,PX_EL_OVERRIDE=null,TERRTEST_ON=(typeof location!=='undefined'&&location.search&&location.search.indexOf('terraintest')>=0);
+function elevPx(tx,ty){var ri=pxNearRegion(tx,ty),t=world.regions[ri].terrain;if(t==='湖'||t==='河川'||t==='海岸')return 0;var b=(t==='山脈'||t==='火山'||t==='雪原')?2:((t==='森林'||t==='草原'||t==='遺跡周辺'||t==='砂漠'||t==='洞窟')?1:0);var e=b+((idHash(tx+'e'+ty+'_'+ri)%4===0)?1:0);return e>3?3:e}
+function pxSideColor(t,df){if(t==='雪原')return df>=2?'#4b5563':'#9ca3af';if(t==='砂漠'||t==='海岸')return df>=2?'#b45309':'#d97706';if(t==='火山')return df>=2?'#292524':'#57534e';if(t==='森林'||t==='草原'||t==='湿地')return df>=2?'#713f12':'#4d7c0f';if(t==='洞窟')return '#292524';return df>=2?'#44403c':'#78716c'}
+function pxDrawGrounded(ctx,cr,EL){var pos=pxPos[cr.id]||pxTarget(cr);var gx=Math.max(0,Math.min(23,Math.floor(pos.x/10))),gy=Math.max(0,Math.min(14,Math.floor(pos.y/10)));var e=EL?EL[gy][gx]:0;ctx.save();ctx.translate(0,-e*PX_HSTEP);pxDrawCreature(ctx,cr);ctx.restore()}
+function terrTestRegions(){var defs=[['山脈',5,2],['雪原',20,1],['森林',11,3],['草原',5,4],['砂漠',20,4],['森林',14,5],['草原',12,6],['湿地',2,7],['湖',18,7],['草原',8,8],['洞窟',2,9],['海岸',21,9]];return defs.map(function(d,i){return {name:'テスト'+d[0],terrain:d[0],x:d[1],y:d[2],discovered:true,waterLevel:50,water:50,vegetation:50,food:50,danger:0,tempOff:0,points:[]}})}
+function terrTestElev(){var E=[],x,y;for(y=0;y<15;y++){var r=[];for(x=0;x<24;x++){var e=0;if(x>=2&&x<=8&&y>=2&&y<=5)e=3;else if(x>=2&&x<=9&&y===6)e=1;else if(x>=10&&x<=13&&y>=3&&y<=7)e=(y<=4)?2:1;else if(y<=6&&x>=15)e=1;r.push(e)}E.push(r)}return E}
 function drawPxWorld(){
  var cv=$('pxWorld');if(!cv||!world||!world.regions)return;
  var wt=elapsedNow(),p=parts(wt),wx=weatherFor(p.day,p.seasonIdx);
@@ -3131,22 +3137,28 @@ function drawPxWorld(){
  if(!cv.getContext)return;
  var ctx=cv.getContext('2d');if(!ctx)return;
  pxFrame++;
+ if(TERRTEST_ON){var svR=world.regions,svS=world.settlements;world.regions=terrTestRegions();world.settlements=[];PX_EL_OVERRIDE=terrTestElev();drawPxWorldCore(ctx,p,wx,phase0);world.regions=svR;world.settlements=svS;PX_EL_OVERRIDE=null;return}
+ drawPxWorldCore(ctx,p,wx,phase0);
+}
+function drawPxWorldCore(ctx,p,wx,phase0){
  var tx,ty,i,soraCrV=findLife('sora-01');
- var elevAvgCache={};world.regions.forEach(function(rg9,ri9){elevAvgCache[ri9]=regionElevAvg(ri9,rg9.terrain)});
+ var EL=PX_EL_OVERRIDE||null;
+ if(!EL){EL=[];for(ty=0;ty<15;ty++){var rowE=[];for(tx=0;tx<24;tx++)rowE.push(elevPx(tx,ty));EL.push(rowE)}}
  for(ty=0;ty<15;ty++)for(tx=0;tx<24;tx++){
   var ri2=pxNearRegion(tx,ty),terr=world.regions[ri2].terrain;
   var hasS=false;for(i=0;i<world.settlements.length;i++)if(world.settlements[i].region===ri2)hasS=true;
   var pal=PX_TER[hasS?'集落':terr]||PX_TER['草原'];
   var h=idHash(tx+'_'+ty+'_'+ri2);
+  var e=EL[ty][tx],eS=(ty<14)?EL[ty+1][tx]:0;
+  if(e>eS){var df=e-eS;ctx.fillStyle=pxSideColor(terr,df);ctx.fillRect(tx*10,ty*10-e*PX_HSTEP+10,10,df*PX_HSTEP);if(df>=2){ctx.fillStyle='rgba(0,0,0,0.28)';for(var sf=1;sf<df*PX_HSTEP;sf+=2)ctx.fillRect(tx*10,ty*10-e*PX_HSTEP+10+sf,10,1)}else{ctx.fillStyle='rgba(255,255,255,0.14)';ctx.fillRect(tx*10,ty*10-e*PX_HSTEP+11,10,1)}}
+  ctx.save();ctx.translate(0,-e*PX_HSTEP);
   ctx.fillStyle=(h%5===0)?pal[1]:pal[0];ctx.fillRect(tx*10,ty*10,10,10);
-  if(!world.regions[ri2].discovered){ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(tx*10,ty*10,10,10);if(h%7===0){ctx.fillStyle='#5dff7a';ctx.fillRect(tx*10+4,ty*10+3,2,4)}continue}
+  if(!world.regions[ri2].discovered){ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(tx*10,ty*10,10,10);if(h%7===0){ctx.fillStyle='#5dff7a';ctx.fillRect(tx*10+4,ty*10+3,2,4)}ctx.restore();continue}
   /* 季節と水位の視覚化（内部状態と一致させる） */
   var rg2=world.regions[ri2];
   if(p.seasonIdx===3){ctx.fillStyle='rgba(255,255,255,0.26)';ctx.fillRect(tx*10,ty*10,10,10)}
   else if(p.seasonIdx===2&&(terr==='森林'||terr==='草原')){ctx.fillStyle='rgba(217,119,6,0.20)';ctx.fillRect(tx*10,ty*10,10,10)}
   else if(p.seasonIdx===0&&terr==='草原'&&h%13===0){ctx.fillStyle='#fbcfe8';ctx.fillRect(tx*10+1,ty*10+2,2,2)}
-  var ea=elevAvgCache[ri2];
-  if(vq()!=='lite'&&ea!==undefined){if(ea>=1.9){ctx.fillStyle='rgba(255,255,255,0.10)';ctx.fillRect(tx*10,ty*10,10,10)}else if(ea>=1.2){ctx.fillStyle='rgba(255,255,255,0.05)';ctx.fillRect(tx*10,ty*10,10,10)}else if(ea<0.5){ctx.fillStyle='rgba(0,0,0,0.10)';ctx.fillRect(tx*10,ty*10,10,10)}}
   if(terr==='湖'||terr==='河川'||terr==='海岸'){if(rg2.waterLevel<30){ctx.fillStyle='#854d0e';ctx.fillRect(tx*10+3,ty*10+3,4,4)}else if(rg2.waterLevel>80){ctx.fillStyle='rgba(56,189,248,0.35)';ctx.fillRect(tx*10,ty*10,10,10)}}
   if(vq()==='high'){if((terr==='湖'||terr==='河川'||terr==='海岸')&&h%11===0){ctx.fillStyle='rgba(224,242,254,0.85)';ctx.fillRect(tx*10+2+(h%5),ty*10+3,2,1)}else if((terr==='草原'||terr==='森林')&&h%17===0){ctx.fillStyle='#fde68a';ctx.fillRect(tx*10+3,ty*10+6,1,1)}}
   /* 地形デコレーション（タイル組み合わせ） */
@@ -3160,6 +3172,7 @@ function drawPxWorld(){
   else if(terr==='湿地'){if(h%4===0){ctx.fillRect(tx*10+3,ty*10+3,1,5);ctx.fillRect(tx*10+6,ty*10+4,1,4)}}
   if(hasS&&h%4===0){ctx.fillStyle='#92400e';ctx.fillRect(tx*10+3,ty*10+5,4,3);ctx.fillStyle='#fbbf24';ctx.fillRect(tx*10+2,ty*10+3,6,2);ctx.fillStyle='#fef3c7';ctx.fillRect(tx*10+4,ty*10+6,1,1)} /* 集落の家 */
   if(soraCrV&&soraCrV.visited&&soraCrV.visited.indexOf(ri2)>=0&&h%6===0){ctx.fillStyle='#fde047';ctx.fillRect(tx*10+8,ty*10+1,1,1)} /* SORA-01の訪問の印 */
+  ctx.restore();
  }
  /* 生活痕跡（保存された足跡・巣） */
  if(world.visual&&world.visual.traces){ctx.fillStyle='rgba(30,20,5,0.5)';
@@ -3173,8 +3186,8 @@ function drawPxWorld(){
  var soraCr=null,drawList=[];
  world.life.forEach(function(cr){if(cr.alive===false)return;if(cr.id==='sora-01'){soraCr=cr;return}drawList.push(cr)});
  drawList.sort(function(a,b){var ya=pxPos[a.id]?pxPos[a.id].y:pxTarget(a).y,yb=pxPos[b.id]?pxPos[b.id].y:pxTarget(b).y;return ya-yb});
- drawList.forEach(function(cr){pxDrawCreature(ctx,cr)});
- if(soraCr)pxDrawCreature(ctx,soraCr); /* SORA-01は最前面 */
+ drawList.forEach(function(cr){pxDrawGrounded(ctx,cr,EL)});
+ if(soraCr)pxDrawGrounded(ctx,soraCr,EL); /* SORA-01は最前面 */
  /* 時間帯 */
  var phase=phase0;
  if(phase==='夕方'){ctx.fillStyle='rgba(249,115,22,0.18)';ctx.fillRect(0,0,240,150)}
@@ -3498,7 +3511,7 @@ function init(){
  var pxc=$('pxWorld');if(pxc)pxc.onclick=function(ev){
   var rect=pxc.getBoundingClientRect();if(!rect.width)return;
   var mx=(ev.clientX-rect.left)/rect.width*240,my=(ev.clientY-rect.top)/rect.height*150,best=null,bd=1e9;
-  world.life.forEach(function(cr){if(cr.alive===false)return;var pos=pxPos[cr.id];if(!pos)return;var dx=pos.x-mx,dy=pos.y-my,d=dx*dx+dy*dy;if(d<bd){bd=d;best=cr}});
+  world.life.forEach(function(cr){if(cr.alive===false)return;var pos=pxPos[cr.id];if(!pos)return;var dx=pos.x-mx,dy=(pos.y-elevPx(Math.max(0,Math.min(23,Math.floor(pos.x/10))),Math.max(0,Math.min(14,Math.floor(pos.y/10))))*PX_HSTEP)-my,d=dx*dx+dy*dy;if(d<bd){bd=d;best=cr}});
   if(best&&bd<900){selectedLife=best.id;drawPxWorld();drawLife();msg(best.name+'を選択しました')}
  };
  setInterval(function(){if(document.hidden||!world||!world.seed||!world.visual||world.visual.pxPaused||world.liteMode)return;var m=$('main');if(m&&m.className==='active'){drawPxWorld();drawScenePx();miniFrame++;miniList.forEach(function(mc){drawMini(mc.cv,mc.cr)})}},800);
