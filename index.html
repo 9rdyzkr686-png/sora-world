@@ -208,6 +208,7 @@ var SPECIES=['モフリス','カゼトビ','ミズトカゲ','ホシミミ','イ
 var NAMES=['ポコ','ミル','タロ','ノノ','ピコ','ルル','モモ','ココ','フワ','ゴン','ペロ','ヌヌ','ワワ','キキ','トト','ムム','レレ','ジジ','ソラミ','チビタ'];
 var IMPORTANT={world:1,nature:1,system:1,discovery:1,meeting:1,legacy:1,disaster:1,birth:1,death:1,culture:1,request:1,ai:1,summary:1};
 var SP_ROLE={'モフリス':'草食','カゼトビ':'肉食','ミズトカゲ':'肉食','ホシミミ':'草食','イワガメモドキ':'草食','ユキフクロ':'肉食','スナトビ':'雑食','ヒカリドリ':'雑食','カワセミドリ':'肉食','ヨルモグ':'雑食','ハナトゲ':'草食'};
+function genOf(cr,seen){if(!cr||!cr.parents||!cr.parents.length)return 1;seen=seen||{};if(seen[cr.id])return 1;seen[cr.id]=1;var g=1;cr.parents.forEach(function(pid){var pp=findLife(pid);if(pp)g=Math.max(g,genOf(pp,seen)+1)});return Math.min(g,99)}
 function roleOf(species){if(SP_ROLE[species])return SP_ROLE[species];var opts=['草食','雑食','肉食'];return opts[idHash(species||'')%3]}
 var IMP3={world:1,legacy:1,disaster:1,extinction:1,journey:1,evolution:1,milestone:1};
 var IMP2={birth:1,death:1,discovery:1,culture:1,summary:1,civilization:1,settlement:1,relationship:1,family:1,rare:1,crisis:1,battle:1};
@@ -224,7 +225,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54&&w.format!==55&&w.format!==56&&w.format!==57&&w.format!==58&&w.format!==59&&w.format!==60&&w.format!==61)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54&&w.format!==55&&w.format!==56&&w.format!==57&&w.format!==58&&w.format!==59&&w.format!==60&&w.format!==61&&w.format!==62)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -382,6 +383,7 @@ function migrateWorld(w){
  if(w.format===58){w.format=59;initV59(w);if(w.seed)w.seed.status='v1.3-step1';w.chronicle.push({id:uid()+'-mig59',type:'system',text:'LIVING UNIVERSE STEP 1へ移行した（世界の整合性検査：SYSTEM画面で個体IDの重複・存在しない親への参照・範囲外の地域や数値・歴史の時系列などを読み取り専用で検査し、正常/注意/警告/重大で報告するようになった。検査はデータを変更しない）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===59){w.format=60;initV60(w);if(w.seed)w.seed.status='v1.3-step2';w.chronicle.push({id:uid()+'-mig60',type:'system',text:'LIVING UNIVERSE STEP 2へ移行した（因果関係の構造化：これから発生する主要な出来事には原因フィールドが付き、NEWSとHISTORYで「（原因：…）」と表示されるようになった。過去の記録は変更していない）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===60){w.format=61;initV61(w);if(w.seed)w.seed.status='v1.3-step3';w.chronicle.push({id:uid()+'-mig61',type:'system',text:'LIVING UNIVERSE STEP 3へ移行した（生態系：種ごとに食性（草食・肉食・雑食）が定まり、個体詳細に表示されるようになった。地域の食性バランスが植生への採食圧と捕食圧による移動に影響するようになった。SORA-01は食物連鎖の外の特別な存在として扱う）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ if(w.format===61){w.format=62;initV62(w);if(w.seed)w.seed.status='v1.3-step4';w.chronicle.push({id:uid()+'-mig62',type:'system',text:'LIVING UNIVERSE STEP 4へ移行した（世代交代の補完：親子関係から導く世代番号と兄弟姉妹数が個体詳細に表示されるようになり、巣を持たない子が親の巣のある地域で休むと、その巣を受け継ぐようになった）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  else if(w.format>15)initV16(w);
  return changed;
 }
@@ -389,8 +391,8 @@ function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:61,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.3-step3'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);
+ world={format:62,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.3-step4'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);initV62(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -586,6 +588,7 @@ function dailyLiving(p,wt){
  for(i=0;i<world.settlements.length;i++){var st=world.settlements[i];if(st.level>=3){r=world.regions[st.region];r.vegetation=clamp(r.vegetation-0.6,0,100);fx('civ'+st.id,'因果：'+st.name+'の発展で資源消費が増え、周辺の植生が少し減った',15)}}
  for(i=0;i<world.life.length;i++){var c2=world.life[i];if(c2.alive===false)continue;var H=L.habitats[c2.id];if(!H){H={stays:{},nest:-1,traces:0};L.habitats[c2.id]=H}
   if(c2.state==='休息中'||c2.state==='睡眠中'){H.stays[c2.region]=(H.stays[c2.region]||0)+1;H.traces=Math.min(99,(H.traces||0)+1);
+   if(H.nest===-1&&c2.parents&&c2.parents.length){for(var pi=0;pi<c2.parents.length;pi++){var PH=L.habitats[c2.parents[pi]];if(PH&&PH.nest===c2.region){H.nest=c2.region;logLife(c2,world.regions[c2.region].name+'で親の巣を受け継いだ',wt);break}}}
    if(H.stays[c2.region]>=3&&H.nest!==c2.region){H.nest=c2.region;logLife(c2,world.regions[c2.region].name+'に自分の巣を作った',wt);if(c2.id==='sora-01')addMemory(c2,'自分の巣を作った：'+world.regions[c2.region].name,wt);fx('nest'+c2.id,'生活：'+c2.name+'が'+world.regions[c2.region].name+'に巣を作った',3)}}
  }
 }
@@ -1314,7 +1317,7 @@ function drawLife(){
  ['名前：'+cr.name+' / 種族：'+cr.species,'性別：'+sexOf(cr)+' / 体格：'+sizeOf(cr)+'%（80=小柄〜120=大柄）','年齢：'+cr.ageDays+'日（'+stageOf(cr)+' / 第'+(cr.generation||1)+'世代）'+(cr.alive===false?' / 死亡（'+cr.deathDay+'日目）':'')+' / 体力：'+cr.hp,'訪れた地域：'+(cr.visited?cr.visited.length:1)+'地域','空腹：'+cr.hunger+'（0=満腹〜100=空腹） / 疲労：'+cr.fatigue,'現在地：'+world.regions[cr.region].name+' / 住みか：'+world.regions[cr.home].name,'状態：'+cr.state,'性格： 好奇心'+pnum(ps.curiosity)+' 警戒心'+pnum(ps.caution)+' 社交性'+pnum(ps.sociability)+' 活動性'+pnum(ps.activity)+' 縄張り'+pnum(ps.territorial),'記憶：'+cr.memories.length+'件'].forEach(function(t){line(d,t)});
  var famTxt='家族：'+((cr.parents&&cr.parents.length)?cr.parents.map(function(pid){var pp=findLife(pid);return pp?pp.name:pid}).join('・')+'の子':'（第1世代）');
  var kidN=[];world.life.forEach(function(k3){if(k3.parents&&k3.parents.indexOf(cr.id)>=0)kidN.push(k3.name)});
- line(d,famTxt+(kidN.length?' / 子：'+kidN.join('、'):''));line(d,'食性：'+roleOf(cr.species)+'生物'+(cr.id==='sora-01'?'（SORA-01は食物連鎖の外にある特別な存在）':''));
+ line(d,famTxt+(kidN.length?' / 子：'+kidN.join('、'):''));line(d,'食性：'+roleOf(cr.species)+'生物'+(cr.id==='sora-01'?'（SORA-01は食物連鎖の外にある特別な存在）':''));var sibN=0;if(cr.parents&&cr.parents.length)world.life.forEach(function(k4){if(k4.id!==cr.id&&k4.parents&&k4.parents.some(function(pp2){return cr.parents.indexOf(pp2)>=0}))sibN++});line(d,'世代：第'+genOf(cr)+'世代'+(sibN?' ／ 兄弟姉妹 '+sibN+' 体':''));
  var logs=cr.lifeLog.slice(-10).reverse();
  if(logs.length){line(d,'-- 最近の生活 --');logs.forEach(function(l){line(d,stampFull(l.wt)+' '+l.text)})}
 }
@@ -1858,6 +1861,7 @@ function driftTrait(cr,key,amt){
  ps[key]=clamp(Math.round((ps[key]+amt)*10)/10,Math.max(5,base-25),Math.min(99,base+25));
 }
 function stageLabel4(cr){if(cr.ageDays<100)return '幼少期';if(cr.ageDays<400)return '成長期';if(cr.ageDays<900)return '成熟期';return '老年期'}
+function initV62(w){initV61(w);if(!w.visual6)w.visual6={};w.visual6.generation=true}
 function initV61(w){initV60(w);if(!w.visual6)w.visual6={};w.visual6.foodChain=true}
 function initV60(w){initV59(w);if(!w.visual6)w.visual6={};w.visual6.causeField=true}
 function initV59(w){initV58(w);if(!w.visual6)w.visual6={};w.visual6.integrity=true}
@@ -3211,11 +3215,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&world.format<61){
+  if(world&&world.seed&&world.format<62){
    try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);initV62(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
