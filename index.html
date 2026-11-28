@@ -102,7 +102,7 @@ section canvas{outline:1px solid #14532d;outline-offset:-1px}
 </section>
 <section id="map">
 <div class="panel"><h2>PIXEL MAP / ドット絵惑星地図</h2><canvas id="mapPx" class="bigcv" width="288" height="120"></canvas><div class="small">地図をタップすると地域の詳細を表示します。☾=SORA-01 / 家=集落 / 柱=遺跡</div><div id="mapDetail"></div></div>
-<div class="panel"><h2>REGION VIEW / 地域タイル観測</h2><canvas id="regionPx" class="bigcv" width="288" height="216"></canvas><div class="row"><button id="regionPrev">◀ 前の地域</button><button id="regionSora">SORA-01の地域</button><button id="regionNext">次の地域 ▶</button></div><div id="regionInfo"></div></div>
+<div class="panel"><h2>REGION VIEW / 地域タイル観測</h2><canvas id="regionPx" class="bigcv" width="288" height="216"></canvas><div class="row"><button id="regionPrev">◀ 前の地域</button><button id="regionSora">SORA-01の地域</button><button id="regionNext">次の地域 ▶</button><button id="regionZoom">ズーム切替</button><button id="regionFollow">SORAを追う</button></div><div id="regionInfo"></div></div>
 <div class="panel" id="interiorPanel" style="display:none"><h2>INTERIOR VIEW / 建物の内部</h2><canvas id="interiorPx" class="bigcv" width="288" height="162"></canvas><div id="interiorInfo"></div><div class="row"><button id="interiorBack">◀ 地域へ戻る</button></div></div>
 <div class="panel"><h2>PLANET MAP / 地域・探索</h2><div id="mapList"></div></div>
 <div class="panel"><h2>CIVILIZATION / 文明・集落</h2><div id="civList"></div></div>
@@ -211,7 +211,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -349,6 +349,7 @@ function migrateWorld(w){
  if(w.format===39){w.format=40;initV40(w);if(w.seed)w.seed.status='v1.0-phase100-tile-engine';w.chronicle.push({id:uid()+'-mig40',type:'system',text:'Ver.1.0 PHASE 10.0 PIXEL ENGINEへ移行した（MAPタブに地域タイル観測を追加：地形タイル・水際の自動接続・植生・集落の道路と建物・住民を、既存の世界データからそのまま描画。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===40){w.format=41;initV41(w);if(w.seed)w.seed.status='v1.0-phase101-interior';w.chronicle.push({id:uid()+'-mig41',type:'system',text:'Ver.1.0 PHASE 10.1へ移行した（建物の内部観測を追加：地域タイルで建物をタップすると内部に入り、用途ごとの家具と住民を観測できる。ヘッダー表記をVer.1.0に更新。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===41){w.format=42;initV42(w);if(w.seed)w.seed.status='v1.0-phase102-pathfinding';w.chronicle.push({id:uid()+'-mig42',type:'system',text:'Ver.1.0 PHASE 10.2へ移行した（地域タイルに経路探索を追加：住民は通行できるタイルだけを辿り、状態に合わせて巣・水辺・道路・散策先へ実際に歩く。SORA-01の経路は金色の点で表示。移動は観測用の表示状態のみで、世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ if(w.format===42){w.format=43;initV43(w);if(w.seed)w.seed.status='v1.0-phase103-camera';w.chronicle.push({id:uid()+'-mig43',type:'system',text:'Ver.1.0 PHASE 10.3へ移行した（地域タイル観測にカメラを追加：ズーム切替で拡大表示、SORAを追うボタンでSORA-01を自動追跡。拡大中も建物タップで内部に入れる。カメラは観測用の表示状態のみで、世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  else if(w.format>15)initV16(w);
  return changed;
 }
@@ -356,8 +357,8 @@ function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:42,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.0-phase102-pathfinding'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);
+ world={format:43,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.0-phase103-camera'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -1801,6 +1802,7 @@ function driftTrait(cr,key,amt){
  ps[key]=clamp(Math.round((ps[key]+amt)*10)/10,Math.max(5,base-25),Math.min(99,base+25));
 }
 function stageLabel4(cr){if(cr.ageDays<100)return '幼少期';if(cr.ageDays<400)return '成長期';if(cr.ageDays<900)return '成熟期';return '老年期'}
+function initV43(w){initV42(w);if(w.pixel1)w.pixel1.cam=true}
 function initV42(w){initV41(w)}
 function initV41(w){initV40(w)}
 function initV40(w){initV39(w);if(!w.pixel1)w.pixel1={v:1}}
@@ -1872,6 +1874,8 @@ function drawPlanetPx(){
  var pm=$('planetMeters');if(pm){pm.innerHTML='';line(pm,'惑星の健全度：生態系スコア '+eco+' / 植生 '+vegAvg+' / 水 '+watAvg+' / 種族数 '+spn+' / 発見地域 '+discoveredCount()+'/'+world.regions.length)}
 }
 var mapSelRegion=-1;
+var REGION_ZOOM=1,REGION_FOLLOW=false,RCAM={x:0,y:0},regionOff=null;
+function centerCamOnSora(){var vw=REGION_ZOOM===2?144:288,vh=REGION_ZOOM===2?108:216;var tp=TILE_POS['sora-01'];if(tp&&tp.ri===regionViewIdx()){RCAM.x=Math.max(0,Math.min(288-vw,Math.round(tp.x-vw/2)));RCAM.y=Math.max(0,Math.min(216-vh,Math.round(tp.y-vh/2)))}else{RCAM.x=Math.round((288-vw)/2);RCAM.y=Math.round((216-vh)/2)}}
 var TILE_POS={};
 function tileWalkable(ri,terr,gx,gy,st){if(gx<0||gy<0||gx>=16||gy>=12)return false;if(tileWater(ri,terr,gx,gy))return false;var r=world.regions[ri],h=idHash(ri+'g'+gx+'x'+gy)%100;if((terr==='森林'||terr==='遺跡周辺')&&h<(r.vegetation||50)*0.8)return false;if((terr==='火山'||terr==='山脈')&&h<22)return false;if(st){var bl=st.buildings||[];for(var i=0;i<Math.min(8,bl.length);i++){var bx=(1+(i%4)*4),by=(i<4?5:9);if(gx>=bx&&gx<bx+2&&gy>=by&&gy<=by+1)return false}}return true}
 function tileBFS(ri,terr,st,sx,sy,tx,ty){if(sx===tx&&sy===ty)return[];function key(x,y){return y*16+x}var prev={},seen={},q=[[sx,sy]];seen[key(sx,sy)]=1;while(q.length){var cur=q.shift();if(cur[0]===tx&&cur[1]===ty)break;var dirs=[[1,0],[-1,0],[0,1],[0,-1]];for(var d=0;d<4;d++){var nx=cur[0]+dirs[d][0],ny=cur[1]+dirs[d][1];if(seen[key(nx,ny)]||!tileWalkable(ri,terr,nx,ny,st))continue;seen[key(nx,ny)]=1;prev[key(nx,ny)]=cur;q.push([nx,ny])}}if(!seen[key(tx,ty)])return null;var path=[],c=[tx,ty];while(!(c[0]===sx&&c[1]===sy)){path.unshift(c);c=prev[key(c[0],c[1])];if(!c)break}return path}
@@ -1886,7 +1890,8 @@ function regionViewIdx(){if(REGION_VIEW!==null&&REGION_VIEW!==undefined&&world.r
 function regionStep(d){REGION_VIEW=(regionViewIdx()+d+world.regions.length)%world.regions.length;drawRegionView()}
 function tileWater(ri,terr,gx,gy){if(terr==='湖')return idHash(ri+'w'+(gx>>1)+'x'+(gy>>1))%100<52;if(terr==='河川'){var c=6+(((gx*7)%5<2)?-1:((gx*7)%5>3)?1:0);return Math.abs(gy-c)<=1}if(terr==='海岸')return gy>=8;if(terr==='湿地')return idHash(ri+'w'+gx+'x'+gy)%100<26;return false}
 function drawRegionView(){
- var cv=$('regionPx');if(!cv||!cv.getContext||!world||!world.regions)return;var ctx=cv.getContext('2d');if(!ctx)return;
+ var cv=$('regionPx');if(!cv||!cv.getContext||!world||!world.regions)return;if(!regionOff){try{regionOff=document.createElement('canvas');regionOff.width=288;regionOff.height=216}catch(e){regionOff=null}}
+ var ctx=(regionOff?regionOff:cv).getContext('2d');if(!ctx)return;
  var ri=regionViewIdx(),r=world.regions[ri],terr=r.terrain,TS=18,COLS=16,ROWS=12;
  var wt=elapsedNow(),p=parts(wt),wx=weatherFor(p.day,p.seasonIdx),night=(p.h<6||p.h>=19);
  var st=null;world.settlements.forEach(function(x){if(x.region===ri)st=x});
@@ -1937,7 +1942,13 @@ function drawRegionView(){
  var inf=$('regionInfo');if(inf){inf.innerHTML='';line(inf,r.name+'（'+terr+'） / 植生'+Math.round(r.vegetation||50)+'% / 食料'+Math.round(r.food||0)+' / 水分'+Math.round(r.water||0));
   if(st)line(inf,'集落：'+st.name+' Lv'+st.level+' / 建物 '+(st.buildings?st.buildings.length:0)+'軒（世界第'+(st.foundedDay||0)+'日に誕生）');
   line(inf,'この地域の生命：'+res.length+'体'+(res.length?'（'+res.slice(0,5).map(function(c){return c.name}).join('・')+(res.length>5?' ほか':'')+'）':''));
-  if(!r.discovered)line(inf,'※ 未発見の地域です（霧がかかっています）','dim')}
+  if(!r.discovered)line(inf,'※ 未発見の地域です（霧がかかっています）','dim');
+  line(inf,'カメラ：'+(REGION_ZOOM===2?'拡大 ×2':'全体表示')+(REGION_FOLLOW?' / SORA-01を追跡中':''),'dim')}
+ var dcv=$('regionPx');if(dcv&&regionOff){var dctx=dcv.getContext('2d');if(dctx){var vw2=REGION_ZOOM===2?144:288,vh2=REGION_ZOOM===2?108:216;
+  if(REGION_FOLLOW&&TILE_POS['sora-01']&&TILE_POS['sora-01'].ri===ri){RCAM.x=Math.max(0,Math.min(288-vw2,Math.round(TILE_POS['sora-01'].x-vw2/2)));RCAM.y=Math.max(0,Math.min(216-vh2,Math.round(TILE_POS['sora-01'].y-vh2/2)))}
+  RCAM.x=Math.max(0,Math.min(288-vw2,RCAM.x));RCAM.y=Math.max(0,Math.min(216-vh2,RCAM.y));
+  try{dctx.imageSmoothingEnabled=false}catch(e){}
+  dctx.clearRect(0,0,288,216);dctx.drawImage(regionOff,RCAM.x,RCAM.y,vw2,vh2,0,0,288,216)}}
 }
 var INTERIOR_VIEW=null;
 function enterInterior(ri,si,bi){INTERIOR_VIEW={ri:ri,si:si,bi:bi};var pn=$('interiorPanel');if(pn)pn.style.display='';drawInterior()}
@@ -2977,11 +2988,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&world.format<42){
+  if(world&&world.seed&&world.format<43){
    try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
@@ -3012,10 +3023,11 @@ function init(){
  $('more').onclick=function(){limit+=50;draw()};
  var op=$('obsPrev'),on=$('obsNext');if(op)op.onclick=function(){obsStep(-1)};if(on)on.onclick=function(){obsStep(1)};
  var rp=$('regionPrev'),rn=$('regionNext'),rs=$('regionSora');if(rp)rp.onclick=function(){regionStep(-1)};if(rn)rn.onclick=function(){regionStep(1)};if(rs)rs.onclick=function(){REGION_VIEW=null;drawRegionView()};
+ var rzm=$('regionZoom'),rfl=$('regionFollow');if(rzm)rzm.onclick=function(){REGION_ZOOM=REGION_ZOOM===2?1:2;if(REGION_ZOOM===2)centerCamOnSora();rzm.textContent=REGION_ZOOM===2?'ズーム：拡大中':'ズーム切替';drawRegionView()};if(rfl)rfl.onclick=function(){REGION_FOLLOW=!REGION_FOLLOW;if(REGION_FOLLOW){REGION_ZOOM=2;centerCamOnSora();var rz2=$('regionZoom');if(rz2)rz2.textContent='ズーム：拡大中'}rfl.textContent=REGION_FOLLOW?'追跡中：SORA':'SORAを追う';drawRegionView()};
  var pxb=$('pxPause');if(pxb)pxb.onclick=function(){if(!world.visual)initV12(world);world.visual.pxPaused=!world.visual.pxPaused;if(save())msg('ピクセルアニメーションを'+(world.visual.pxPaused?'止めました':'再開しました'));drawPxWorld()};
  var atg=$('animToggle');if(atg)atg.onclick=function(){if(world.visual){world.visual.pxPaused=!world.visual.pxPaused;atg.textContent='アニメーション: '+(world.visual.pxPaused?'OFF':'ON');save();draw()}};
  var mpx=$('mapPx');if(mpx)mpx.onclick=mapTap;
- var rgx=$('regionPx');if(rgx)rgx.onclick=function(ev){var rect=rgx.getBoundingClientRect();if(!rect.width)return;var mx=(ev.clientX-rect.left)/rect.width*288,my=(ev.clientY-rect.top)/rect.height*216;var ri=regionViewIdx(),TS=18;for(var si2=0;si2<world.settlements.length;si2++){var st2=world.settlements[si2];if(st2.region!==ri)continue;var bl2=st2.buildings||[];for(var bi3=0;bi3<Math.min(8,bl2.length);bi3++){if(bl2[bi3].name==='道路')continue;var bx3=(1+(bi3%4)*4)*TS,by3=(bi3<4?5:9)*TS;if(mx>=bx3-2&&mx<=bx3+TS*2+2&&my>=by3&&my<=by3+TS+16){enterInterior(ri,si2,bi3);msg(bl2[bi3].name+'の内部を観測します');return}}}msg('建物のある地域では、建物をタップすると内部を観測できます')};
+ var rgx=$('regionPx');if(rgx)rgx.onclick=function(ev){var rect=rgx.getBoundingClientRect();if(!rect.width)return;var vw3=REGION_ZOOM===2?144:288,vh3=REGION_ZOOM===2?108:216;var mx=RCAM.x+(ev.clientX-rect.left)/rect.width*vw3,my=RCAM.y+(ev.clientY-rect.top)/rect.height*vh3;var ri=regionViewIdx(),TS=18;for(var si2=0;si2<world.settlements.length;si2++){var st2=world.settlements[si2];if(st2.region!==ri)continue;var bl2=st2.buildings||[];for(var bi3=0;bi3<Math.min(8,bl2.length);bi3++){if(bl2[bi3].name==='道路')continue;var bx3=(1+(bi3%4)*4)*TS,by3=(bi3<4?5:9)*TS;if(mx>=bx3-2&&mx<=bx3+TS*2+2&&my>=by3&&my<=by3+TS+16){enterInterior(ri,si2,bi3);msg(bl2[bi3].name+'の内部を観測します');return}}}msg('建物のある地域では、建物をタップすると内部を観測できます')};
  var ibk=$('interiorBack');if(ibk)ibk.onclick=function(){exitInterior()};
  var rnc=$('relNet');if(rnc)rnc.onclick=relNetTap;
  var pxc=$('pxWorld');if(pxc)pxc.onclick=function(ev){
