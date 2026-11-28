@@ -216,7 +216,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54&&w.format!==55)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -366,6 +366,7 @@ function migrateWorld(w){
  if(w.format===51){w.format=52;initV52(w);if(w.seed)w.seed.status='v1.2-step1';w.chronicle.push({id:uid()+'-mig52',type:'system',text:'GAP CLOSURE STEP 1へ移行した（一地域の完成：集落の道路沿いに街灯・看板・柵、橋のたもとにも街灯と看板、河川地域の端に滝、森にキノコと茂みを追加。街灯は夜に灯る。描画部品は共通の小さな部品関数で描く。描画のみの変更で、世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===52){w.format=53;initV53(w);if(w.seed)w.seed.status='v1.2-step2';w.chronicle.push({id:uid()+'-mig53',type:'system',text:'GAP CLOSURE STEP 2へ移行した（SORA-01の生活強化：休息中は地域ビューとピクセルワールドでも座り込むようになり、大きな姿では考えごとの点々が頭の上に増えていく。警戒心の高い子は移動の合間に長く立ち止まって周囲を確認し、ゆっくり見回すようになった。座る姿勢と驚き・悲しみの表情は大きな姿に既にあったため再実装していない。描画と観測上の行動表現のみの変更で、世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===53){w.format=54;initV54(w);if(w.seed)w.seed.status='v1.2-step3';w.chronicle.push({id:uid()+'-mig54',type:'system',text:'GAP CLOSURE STEP 3へ移行した（一般生物の生活強化：群れの仲間が同じ地域にいると、地域ビューでは仲間のそばのマスへ集まるようになり、ピクセルワールドでも群れの仲間の方へ寄って動くようになった。既存の群れデータを使った協調移動で、新しいデータは追加していない。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ if(w.format===54){w.format=55;initV55(w);if(w.seed)w.seed.status='v1.2-step4';w.chronicle.push({id:uid()+'-mig55',type:'system',text:'GAP CLOSURE STEP 4へ移行した（町の生活強化：住民が農園の前で農作業をするようになり、祭りの日は住民が通りに集まって飾りが灯る。建てられて間もない建物には足場がかかり、TOWN画面でも（建設中）と分かるようになった。いずれも既存の建物・祭り記録データの表示で、新しいデータは追加していない。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  else if(w.format>15)initV16(w);
  return changed;
 }
@@ -373,8 +374,8 @@ function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:54,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.2-step3'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);
+ world={format:55,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.2-step4'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -1818,6 +1819,7 @@ function driftTrait(cr,key,amt){
  ps[key]=clamp(Math.round((ps[key]+amt)*10)/10,Math.max(5,base-25),Math.min(99,base+25));
 }
 function stageLabel4(cr){if(cr.ageDays<100)return '幼少期';if(cr.ageDays<400)return '成長期';if(cr.ageDays<900)return '成熟期';return '老年期'}
+function initV55(w){initV54(w);if(!w.visual6)w.visual6={};w.visual6.townLife=true}
 function initV54(w){initV53(w);if(!w.visual6)w.visual6={};w.visual6.groupMove=true}
 function initV53(w){initV52(w);if(!w.visual6)w.visual6={};w.visual6.soraLife2=true}
 function initV52(w){initV51(w);if(!w.visual6)w.visual6={};w.visual6.props=true}
@@ -1943,8 +1945,10 @@ function tileBFS(ri,terr,st,sx,sy,tx,ty){if(sx===tx&&sy===ty)return[];function k
 function tileTargetFor(cr,ri,terr,st,cnt){var r=world.regions[ri];
  if(cr.state==='睡眠中'||cr.state==='休息中'){if(world.living&&world.living.habitats&&world.living.habitats[cr.id]&&world.living.habitats[cr.id].nest===ri){var nx=(idHash('nv'+cr.id)%14)+1,ny=(idHash('nv2'+cr.id)%10)+1;if(tileWalkable(ri,terr,nx,ny,st))return[nx,ny]}return null}
  if(cr.state==='食事中'){for(var gy=1;gy<11;gy++)for(var gx=1;gx<15;gx++){if(tileWalkable(ri,terr,gx,gy,st)&&(tileWater(ri,terr,gx,gy-1)||tileWater(ri,terr,gx,gy+1)||tileWater(ri,terr,gx-1,gy)||tileWater(ri,terr,gx+1,gy)))return[gx,gy]}return null}
+ if(st&&world.newsExtra){var fday=parts(elapsedNow()).day;for(var ni2=0;ni2<world.newsExtra.length;ni2++){var ne2=world.newsExtra[ni2];if(ne2.text&&ne2.text.indexOf('祭り')>=0&&ne2.text.indexOf(st.name)>=0&&parts(ne2.wt).day===fday)return[(idHash(cr.id+'fes'+cnt)%10)+3,8]}} /* 祭りの日は通りに集まる */
  if(st&&cnt%2===0)return[(idHash(cr.id+'rd'+cnt)%14)+1,8];
  if(world.groups&&cnt%3!==0){for(var gi=0;gi<world.groups.length;gi++){var g=world.groups[gi];if(g.memberIds&&g.memberIds.indexOf(cr.id)>=0){for(var mj=0;mj<g.memberIds.length;mj++){var mid=g.memberIds[mj];if(mid===cr.id)continue;var mp=TILE_POS[mid];if(mp&&mp.ri===ri){var cand=[[mp.tx+1,mp.ty],[mp.tx-1,mp.ty],[mp.tx,mp.ty+1],[mp.tx,mp.ty-1]];for(var ci2=0;ci2<4;ci2++){var cc=cand[(idHash(cr.id+'grp'+cnt)+ci2)%4];if(cc[0]>=1&&cc[0]<15&&cc[1]>=1&&cc[1]<11&&tileWalkable(ri,terr,cc[0],cc[1],st))return cc}}}}}} /* 群れの協調移動：仲間のそばへ集まる */
+ if(st&&cnt%4===1){var bl3=st.buildings||[];for(var fi3=0;fi3<Math.min(8,bl3.length);fi3++){if(bl3[fi3].name!=='農園')continue;var fx3=(1+(fi3%4)*4)+(cnt%2),fy3=(fi3<4?5:9)-1;if(fy3>=1&&tileWalkable(ri,terr,fx3,fy3,st))return[fx3,fy3]}} /* 農園の前で農作業 */
  for(var t=0;t<24;t++){var wx2=(idHash(cr.id+'wx'+cnt+'_'+t)%14)+1,wy2=(idHash(cr.id+'wy'+cnt+'_'+t)%10)+1;if(tileWalkable(ri,terr,wx2,wy2,st))return[wx2,wy2]}
  return null}
 var REGION_VIEW=null;
@@ -1957,6 +1961,7 @@ function drawRegionView(){
  var ri=regionViewIdx(),r=world.regions[ri],terr=r.terrain,TS=18,COLS=16,ROWS=12;
  var wt=elapsedNow(),p=parts(wt),wx=weatherFor(p.day,p.seasonIdx),night=(p.h<6||p.h>=19);
  var st=null;world.settlements.forEach(function(x){if(x.region===ri)st=x});
+ var fesName=null;if(st&&world.newsExtra){for(var ni=0;ni<world.newsExtra.length;ni++){var ne=world.newsExtra[ni];if(ne.text&&ne.text.indexOf('祭り')>=0&&ne.text.indexOf(st.name)>=0&&parts(ne.wt).day===p.day){var fm=ne.text.match(/「([^」]+)」/);fesName=fm?fm[1]:'祭り'}}}
  function isWater(gx,gy){if(gx<0||gy<0||gx>=COLS||gy>=ROWS)return false;return tileWater(ri,terr,gx,gy)}
  function baseCol(gx,gy){var h=idHash(ri+'g'+gx+'x'+gy)%100;
   if(terr==='砂漠')return h<12?'#d97706':'#b45309';if(terr==='雪原')return h<15?'#e2e8f0':'#cbd5e1';if(terr==='火山')return h<20?'#292524':'#44403c';if(terr==='洞窟')return h<20?'#1f2937':'#111827';if(terr==='山脈')return h<25?'#57534e':'#44403c';
@@ -1999,7 +2004,8 @@ function drawRegionView(){
    if(!dmg&&st.level>=2){ctx.fillStyle='rgba(255,255,255,0.13)';ctx.fillRect(bx2+1,by2+24,TS*2-2,3);ctx.fillStyle=(night?'#fde047':'#7dd3fc');ctx.fillRect(bx2+14,by2+11,5,5)}
    ctx.fillStyle=(night&&!dmg)?'#fde047':'#7dd3fc';ctx.fillRect(bx2+7,by2+11,5,5);
    ctx.fillStyle=dmg?'#292524':'#451a03';ctx.fillRect(bx2+23,by2+19,6,11);
-   if(dmg){ctx.fillStyle='#111827';ctx.fillRect(bx2+12,by2+8,1,8)}}}
+   if(dmg){ctx.fillStyle='#111827';ctx.fillRect(bx2+12,by2+8,1,8)}
+   if(!dmg&&p.day-(b.builtDay||0)<=2&&p.day>=(b.builtDay||0)){ctx.fillStyle='#a16207';ctx.fillRect(bx2-2,by2-4,2,TS+16);ctx.fillRect(bx2+TS*2,by2-4,2,TS+16);ctx.fillRect(bx2-2,by2-4,TS*2+4,2);ctx.fillRect(bx2+6,by2+4,2,2);ctx.fillRect(bx2+12,by2+9,2,2);ctx.fillRect(bx2+18,by2+14,2,2)}}}
  if(terr==='河川'){var bbx=4+(idHash(ri+'bridge')%8);var bc=6+(((bbx*7)%5<2)?-1:((bbx*7)%5>3)?1:0);
   for(var wy2=bc-1;wy2<=bc+1;wy2++){ctx.fillStyle='rgba(224,242,254,0.75)';ctx.fillRect(1,wy2*TS+((pxFrame*3+wy2*5)%7),3,6);ctx.fillRect(6,wy2*TS+((pxFrame*3+wy2*9)%9),2,5)}
   ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fillRect(0,(bc+1)*TS+13,12,3);
@@ -2007,7 +2013,8 @@ function drawRegionView(){
   ctx.fillStyle='#78350f';ctx.fillRect(bbx*TS+2,(bc-2)*TS+10,2,7);ctx.fillStyle='#a16207';ctx.fillRect(bbx*TS,(bc-2)*TS+3,12,6);ctx.fillStyle='#fde68a';ctx.fillRect(bbx*TS+2,(bc-2)*TS+5,8,1)}
  if(st){ctx.fillStyle='#92400e';for(gx=1;gx<COLS;gx++){if(idHash(ri+'fen'+gx)%3===0)continue;ctx.fillRect(gx*TS,7*TS+14,TS,2);ctx.fillRect(gx*TS+8,7*TS+11,2,5)}
   pxLamp(ctx,2*TS+8,8*TS+1);pxLamp(ctx,7*TS+8,8*TS+1);pxLamp(ctx,12*TS+8,8*TS+1);
-  ctx.fillStyle='#78350f';ctx.fillRect(3,7*TS+10,2,7);ctx.fillStyle='#a16207';ctx.fillRect(1,7*TS+3,13,6);ctx.fillStyle='#fde68a';ctx.fillRect(3,7*TS+5,9,1)}
+  ctx.fillStyle='#78350f';ctx.fillRect(3,7*TS+10,2,7);ctx.fillStyle='#a16207';ctx.fillRect(1,7*TS+3,13,6);ctx.fillStyle='#fde68a';ctx.fillRect(3,7*TS+5,9,1);
+  if(fesName){ctx.fillStyle='#78716c';ctx.fillRect(0,8*TS-5,288,1);var fc3=['#f472b6','#facc15','#22d3ee'];for(var fg=0;fg<8;fg++){ctx.fillStyle=fc3[fg%3];ctx.fillRect(fg*36+14,8*TS-4,4,4)}}}
  (r.points||[]).forEach(function(pt,pi3){if(!pt.found)return;var px3=(idHash(ri+'pt'+pi3)%14+1)*TS,py3=(idHash(ri+'pt2'+pi3)%9+1)*TS;if(pt.ruins){ctx.fillStyle='#78716c';ctx.fillRect(px3,py3+6,16,10);ctx.fillStyle='#a8a29e';ctx.fillRect(px3+2,py3,12,7)}else{ctx.fillStyle='#facc15';ctx.fillRect(px3+7,py3+4,3,3)}});
  if(world.living&&world.living.habitats)for(var hk in world.living.habitats){var H=world.living.habitats[hk];if(H.nest===ri){var nx=(idHash('nv'+hk)%14+1)*TS,ny=(idHash('nv2'+hk)%10+1)*TS;ctx.fillStyle='#92400e';ctx.fillRect(nx+2,ny+10,14,6);ctx.fillStyle='#b45309';ctx.fillRect(nx+5,ny+7,8,4)}}
  var res=[];world.life.forEach(function(cr){if(cr.alive!==false&&cr.region===ri)res.push(cr)});
@@ -2024,7 +2031,8 @@ function drawRegionView(){
   ctx.fillStyle=sora?'#fef3c7':PX_COL[speciesIdxOf(cr.species)%PX_COL.length];ctx.fillRect(cxp-(sit?1:0),cyp+bob+yoff,sit?w9+2:w9,sit?h9-2:h9);
   if(sora){ctx.fillStyle='#f59e0b';ctx.fillRect(cxp+1,cyp+bob+yoff-3,2,3);ctx.fillRect(cxp+w9-3,cyp+bob+yoff-3,2,3);ctx.fillStyle='#6ee7b7';ctx.fillRect(cxp+Math.floor(w9/2)-1,cyp+bob+yoff+Math.floor(h9/2)-1,2,2);ctx.fillStyle='#7dd3fc';ctx.fillRect(cxp-2,cyp+bob+yoff+2,2,3)}
   ctx.fillStyle='#111827';if(cr.state!=='睡眠中')ctx.fillRect(cxp+w9-2,cyp+bob+yoff+2,1,1);
-  if(cr.state==='睡眠中'){ctx.fillStyle='#e0f2fe';ctx.fillRect(cxp+w9+2,cyp-4-(pxFrame%4),2,1)}});
+  if(cr.state==='睡眠中'){ctx.fillStyle='#e0f2fe';ctx.fillRect(cxp+w9+2,cyp-4-(pxFrame%4),2,1)}
+  if(st&&cr.state!=='睡眠中'){var bl2=st.buildings||[];for(var fi=0;fi<Math.min(8,bl2.length);fi++){if(bl2[fi].name!=='農園')continue;var fbx=(1+(fi%4)*4),fby=(fi<4?5:9);if(tp.ty===fby-1&&(tp.tx===fbx||tp.tx===fbx+1)){ctx.fillStyle='#92400e';ctx.fillRect(cxp+w9+1,cyp+4,1,5);ctx.fillStyle='#a8a29e';ctx.fillRect(cxp+w9,cyp+3,3,1)}}}});
  if(!r.discovered){ctx.fillStyle='rgba(15,23,42,0.5)';ctx.fillRect(0,0,288,216)}
  if(wx==='雨'||wx==='雷雨'){ctx.fillStyle='rgba(125,211,252,0.6)';for(var r9=0;r9<20;r9++)ctx.fillRect((r9*37+pxFrame*11)%288,(r9*23+pxFrame*17)%216,1,5)}
  if(wx==='雪'){ctx.fillStyle='rgba(255,255,255,0.85)';for(var s9=0;s9<20;s9++)ctx.fillRect((s9*41+pxFrame*3)%288,(s9*29+pxFrame*5)%216,2,2)}
@@ -2034,6 +2042,7 @@ function drawRegionView(){
   if(terr==='河川'){var bbx2=4+(idHash(ri+'bridge')%8);var bc2=6+(((bbx2*7)%5<2)?-1:((bbx2*7)%5>3)?1:0);glow(bbx2*TS+13,(bc2-2)*TS+6);glow(bbx2*TS+13,(bc2+2)*TS+6)}}
  var inf=$('regionInfo');if(inf){inf.innerHTML='';line(inf,r.name+'（'+terr+'） / 植生'+Math.round(r.vegetation||50)+'% / 食料'+Math.round(r.food||0)+' / 水分'+Math.round(r.water||0));
   if(st)line(inf,'集落：'+st.name+' Lv'+st.level+' / 建物 '+(st.buildings?st.buildings.length:0)+'軒（世界第'+(st.foundedDay||0)+'日に誕生）');
+  if(fesName)line(inf,'今日は祭り「'+fesName+'」が開かれています（住民が通りに集まっています）');
   if(terr==='河川')line(inf,'川には木の橋が架かっています（生命は橋を渡って両岸を行き来できます）','dim');
   line(inf,'この地域の生命：'+res.length+'体'+(res.length?'（'+res.slice(0,5).map(function(c){return c.name}).join('・')+(res.length>5?' ほか':'')+'）':''));
   if(!r.discovered)line(inf,'※ 未発見の地域です（霧がかかっています）','dim');
@@ -2054,7 +2063,8 @@ function drawTown(){
   var res=[];world.life.forEach(function(cr){if(cr.alive!==false&&cr.region===st.region)res.push(cr)});
   line(el,'住民：'+res.length+'体'+(res.length?' ― '+res.map(function(c){return c.name+'（'+c.state+'）'}).join('、'):''),'dim');
   var bl=st.buildings||[];
-  line(el,'建物：'+(bl.length?bl.map(function(b){return b.name+(b.status==='damaged'?'（損傷）':'')}).join('、'):'まだ建物はありません'),'dim');
+  var tday=parts(elapsedNow()).day;
+  line(el,'建物：'+(bl.length?bl.map(function(b){return b.name+(b.status==='damaged'?'（損傷）':(tday-(b.builtDay||0)<=2&&tday>=(b.builtDay||0)?'（建設中）':''))}).join('、'):'まだ建物はありません'),'dim');
   if(st.culture&&st.culture.name)line(el,'文化：'+st.culture.name,'dim');
   if(typeof st.foodStock==='number')line(el,'備蓄：食料'+Math.round(st.foodStock)+' / 資材'+Math.round(st.materials||0),'dim');
   var sora=findLife('sora-01');
@@ -3118,11 +3128,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&world.format<54){
+  if(world&&world.seed&&world.format<55){
    try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
