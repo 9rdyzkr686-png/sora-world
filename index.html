@@ -173,6 +173,7 @@ section canvas{outline:1px solid #14532d;outline-offset:-1px}
 <div class="panel"><h2>OBSERVATION REPLAY / 過去の再現</h2>
 <div class="small">再表示は保存された記録に基づきます。記録文から再現できる範囲で表示します。</div>
 <div id="replayList"></div></div>
+<div class="panel"><h2>LANDSCAPE MEMORY / 風景の記憶</h2><canvas id="landscapePx" class="bigcv" width="288" height="110"></canvas><div class="row"><button id="landscapePrev">◀ 古い風景</button><button id="landscapeNext">新しい風景 ▶</button></div><div id="landscapeInfo"></div></div>
 <div class="panel"><h2>POPULATION GRAPH / 個体数と生態の推移</h2><canvas id="replayGraph" class="bigcv" width="288" height="80"></canvas><div class="small">緑=個体数 / 黄=生態系スコア（日次スナップショットから）</div></div>
 <div class="panel"><h2>REPLAY DETAIL</h2><div id="replayDetail"></div></div>
 </section>
@@ -215,7 +216,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -355,6 +356,7 @@ function migrateWorld(w){
  if(w.format===41){w.format=42;initV42(w);if(w.seed)w.seed.status='v1.0-phase102-pathfinding';w.chronicle.push({id:uid()+'-mig42',type:'system',text:'Ver.1.0 PHASE 10.2へ移行した（地域タイルに経路探索を追加：住民は通行できるタイルだけを辿り、状態に合わせて巣・水辺・道路・散策先へ実際に歩く。SORA-01の経路は金色の点で表示。移動は観測用の表示状態のみで、世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===42){w.format=43;initV43(w);if(w.seed)w.seed.status='v1.0-phase103-camera';w.chronicle.push({id:uid()+'-mig43',type:'system',text:'Ver.1.0 PHASE 10.3へ移行した（地域タイル観測にカメラを追加：ズーム切替で拡大表示、SORAを追うボタンでSORA-01を自動追跡。拡大中も建物タップで内部に入れる。カメラは観測用の表示状態のみで、世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===43){w.format=44;initV44(w);if(w.seed)w.seed.status='v1.0-phase104-town';w.chronicle.push({id:uid()+'-mig44',type:'system',text:'Ver.1.0 PHASE 10.4へ移行した（TOWNタブを追加：生まれた集落ごとに住民の今の暮らし・建物・文化・備蓄を記録し、「この町を観測する」でMAPの地域タイルへ移動できる。町がまだ無い世界では誕生の条件だけを表示。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ if(w.format===44){w.format=45;initV45(w);snapshotTerrain(w,Math.max(0,Math.floor((Date.now()-w.seed.epoch)/w.seed.calendar.dayMs)));if(w.seed)w.seed.status='v1.0-phase105-landscape';w.chronicle.push({id:uid()+'-mig45',type:'system',text:'Ver.1.0 PHASE 10.5へ移行した（LANDSCAPE MEMORY：世界の風景を30日ごとにスナップショット記録し、REPLAYタブで過去の風景と現在を見比べられる。移行時点の風景を最初の記録とした。記録は追記のみで削除しない。世界のデータと歴史は保持）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  else if(w.format>15)initV16(w);
  return changed;
 }
@@ -362,8 +364,8 @@ function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:44,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.0-phase104-town'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);
+ world={format:45,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.0-phase105-landscape'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -974,7 +976,7 @@ function simulate(){
  var baseElapsed=Math.max(0,oldElapsed),i,k;
  for(i=0;i<steps;i++){
   var wt=baseElapsed+(i+1)*hourMs,p=parts(wt);
-  if(p.h===0){dailyEcosystem(p,wt);dailyLiving(p,wt);dailySocial(p,wt);dailyRuins(p,wt);dailyCulture(p,wt);dailySmallEvents(p,wt);dailyRareEvents(p,wt);dailyCivLife(p,wt);dailySpace(p,wt);dailyEvolution(p,wt);archiveLogs();dailyFamily(p,wt);dailyGrowth(p,wt);dailySoraLife(p,wt);dailyJourney(p,wt);
+  if(p.h===0){dailyEcosystem(p,wt);dailyLiving(p,wt);dailySocial(p,wt);dailyRuins(p,wt);dailyCulture(p,wt);dailySmallEvents(p,wt);dailyRareEvents(p,wt);dailyCivLife(p,wt);dailySpace(p,wt);dailyEvolution(p,wt);archiveLogs();dailyFamily(p,wt);dailyGrowth(p,wt);dailySoraLife(p,wt);dailyJourney(p,wt);dailyTerrainSnap(p);
    if(p.day>=1&&world.lastSoraMeetDay<p.day-1&&world.lastSoraAloneDay!==p.day-1){var so0=findLife('sora-01');if(so0&&so0.alive!==false){world.lastSoraAloneDay=p.day-1;bumpTrait(so0,'independence',wt)}}
   }
   var night=(p.h<6||p.h>=21);
@@ -1807,6 +1809,31 @@ function driftTrait(cr,key,amt){
  ps[key]=clamp(Math.round((ps[key]+amt)*10)/10,Math.max(5,base-25),Math.min(99,base+25));
 }
 function stageLabel4(cr){if(cr.ageDays<100)return '幼少期';if(cr.ageDays<400)return '成長期';if(cr.ageDays<900)return '成熟期';return '老年期'}
+function initV45(w){initV44(w);if(!w.terrainHistory)w.terrainHistory=[]}
+function snapshotTerrain(w2,day){if(!w2.terrainHistory)w2.terrainHistory=[];var lv={};(w2.settlements||[]).forEach(function(st){lv[st.region]=[st.level||1,(st.buildings||[]).length]});w2.terrainHistory.push({day:day,regs:w2.regions.map(function(r,ri){var sv=lv[ri]||[0,0];return [Math.round(r.vegetation||0),Math.round(r.water||0),Math.round(r.food||0),sv[0],sv[1]]})})}
+function dailyTerrainSnap(p){if(p.day>0&&p.day%30===0)snapshotTerrain(world,p.day)}
+var LS_VIEW=-1;
+function drawLandscape(){
+ var cv=$('landscapePx');if(!cv||!cv.getContext||!world)return;var ctx=cv.getContext('2d');if(!ctx)return;
+ var info=$('landscapeInfo');var hist=world.terrainHistory||[];
+ ctx.fillStyle='#020617';ctx.fillRect(0,0,288,110);
+ if(!hist.length){if(info){info.innerHTML='';line(info,'風景の記録はまだありません。世界の風景は30日ごとに自動で記録されます。','dim')}return}
+ var idx=LS_VIEW<0?hist.length-1:Math.max(0,Math.min(hist.length-1,LS_VIEW));LS_VIEW=idx;var snap=hist[idx];
+ var lvNow={};(world.settlements||[]).forEach(function(st){lvNow[st.region]=st.level||1});
+ function cell(ox,ri,vals,lv){var r=world.regions[ri];var cx=ox+(ri%4)*34,cy=16+Math.floor(ri/4)*30;
+  ctx.fillStyle=PX_TER[r.terrain]||'#334155';ctx.fillRect(cx,cy,32,26);
+  ctx.fillStyle='rgba(34,197,94,'+(Math.max(0,Math.min(60,vals[0]))/100*0.55)+')';ctx.fillRect(cx,cy,32,26);
+  ctx.fillStyle='rgba(56,189,248,'+(Math.max(0,Math.min(80,vals[1]))/100*0.5)+')';ctx.fillRect(cx,cy+16,32,10);
+  if(lv>0){ctx.fillStyle='#f59e0b';ctx.fillRect(cx+24,cy+2,6,5);ctx.fillStyle='#fef3c7';ctx.fillRect(cx+26,cy+4,2,2)}}
+ for(var ri2=0;ri2<12;ri2++){cell(6,ri2,snap.regs[ri2]||[0,0,0,0,0],(snap.regs[ri2]||[0,0,0,0,0])[3]);cell(150,ri2,[Math.round(world.regions[ri2].vegetation||0),Math.round(world.regions[ri2].water||0),0],lvNow[ri2]||0)}
+ ctx.fillStyle='#e2e8f0';ctx.fillRect(6,6,30,2);ctx.fillRect(150,6,30,2);
+ if(info){info.innerHTML='';line(info,'風景の記録 '+(idx+1)+' / '+hist.length+' ― 世界第'+snap.day+'日（左）と現在（右）');
+  var notes=[];for(var ri3=0;ri3<12;ri3++){var sv=snap.regs[ri3]||[0,0,0,0,0],dv=Math.round((world.regions[ri3].vegetation||0)-sv[0]),dw=Math.round((world.regions[ri3].water||0)-sv[1]);
+   if(sv[3]===0&&(lvNow[ri3]||0)>0)notes.push(world.regions[ri3].name+'に集落が誕生');
+   else if(Math.abs(dv)>=15)notes.push(world.regions[ri3].name+'の植生 '+(dv>0?'+':'')+dv);
+   else if(Math.abs(dw)>=15)notes.push(world.regions[ri3].name+'の水分 '+(dw>0?'+':'')+dw)}
+  if(notes.length)notes.slice(0,4).forEach(function(n){line(info,'変化：'+n,'dim')});else line(info,'記録時点から大きな変化はありません。','dim')}
+}
 function initV44(w){initV43(w);if(w.pixel1)w.pixel1.town=true}
 function initV43(w){initV42(w);if(w.pixel1)w.pixel1.cam=true}
 function initV42(w){initV41(w)}
@@ -1847,7 +1874,7 @@ function drawVisualsV15(){
   if(secActive('memory'))drawMemoryCards();
   if(secActive('relation'))drawRelNet();
   if(secActive('space'))drawSpacePx();
-  if(secActive('replay'))drawReplayGraph();
+  if(secActive('replay')){drawReplayGraph();drawLandscape()}
   var at=$('animToggle');if(at&&world.visual)at.textContent='アニメーション: '+(world.visual.pxPaused?'OFF':'ON');
  }catch(e){/* ビジュアル失敗で本体を止めない */}
 }
@@ -3013,11 +3040,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&world.format<44){
+  if(world&&world.seed&&world.format<45){
    try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
@@ -3048,6 +3075,7 @@ function init(){
  $('more').onclick=function(){limit+=50;draw()};
  var op=$('obsPrev'),on=$('obsNext');if(op)op.onclick=function(){obsStep(-1)};if(on)on.onclick=function(){obsStep(1)};
  var rp=$('regionPrev'),rn=$('regionNext'),rs=$('regionSora');if(rp)rp.onclick=function(){regionStep(-1)};if(rn)rn.onclick=function(){regionStep(1)};if(rs)rs.onclick=function(){REGION_VIEW=null;drawRegionView()};
+ var lpv=$('landscapePrev'),lnx=$('landscapeNext');if(lpv)lpv.onclick=function(){var h=world.terrainHistory||[];LS_VIEW=(LS_VIEW<0?h.length-1:LS_VIEW)-1;if(LS_VIEW<0)LS_VIEW=0;drawLandscape()};if(lnx)lnx.onclick=function(){var h=world.terrainHistory||[];LS_VIEW=(LS_VIEW<0?h.length-1:LS_VIEW)+1;if(LS_VIEW>=h.length)LS_VIEW=-1;drawLandscape()};
  var rzm=$('regionZoom'),rfl=$('regionFollow');if(rzm)rzm.onclick=function(){REGION_ZOOM=REGION_ZOOM===2?1:2;if(REGION_ZOOM===2)centerCamOnSora();rzm.textContent=REGION_ZOOM===2?'ズーム：拡大中':'ズーム切替';drawRegionView()};if(rfl)rfl.onclick=function(){REGION_FOLLOW=!REGION_FOLLOW;if(REGION_FOLLOW){REGION_ZOOM=2;centerCamOnSora();var rz2=$('regionZoom');if(rz2)rz2.textContent='ズーム：拡大中'}rfl.textContent=REGION_FOLLOW?'追跡中：SORA':'SORAを追う';drawRegionView()};
  var pxb=$('pxPause');if(pxb)pxb.onclick=function(){if(!world.visual)initV12(world);world.visual.pxPaused=!world.visual.pxPaused;if(save())msg('ピクセルアニメーションを'+(world.visual.pxPaused?'止めました':'再開しました'));drawPxWorld()};
  var atg=$('animToggle');if(atg)atg.onclick=function(){if(world.visual){world.visual.pxPaused=!world.visual.pxPaused;atg.textContent='アニメーション: '+(world.visual.pxPaused?'OFF':'ON');save();draw()}};
