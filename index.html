@@ -179,7 +179,7 @@ section canvas{outline:1px solid #14532d;outline-offset:-1px}
 </section>
 <section id="system">
 <div class="panel"><h2>WORLD SEED / 暦の設定</h2><div id="seed" class="small"></div></div>
-<div class="panel"><h2>効果音 / SOUND</h2><button id="soundToggle">効果音: OFF</button><div class="small">端末音（WebAudio）。ONのときだけ小さく鳴ります。</div></div>
+<div class="panel"><h2>効果音 / SOUND</h2><button id="soundToggle">効果音: OFF</button><button id="ambientToggle">環境音: OFF</button><div class="small">環境音はSORA-01のいる地域の地形・天候・昼夜に合わせた小さな生成音です。初期設定はOFFで、軽量表示ONのときは鳴りません。</div><div class="small">端末音（WebAudio）。ONのときだけ小さく鳴ります。</div></div>
 <div class="panel"><h2>アニメーション / ANIMATION</h2><button id="animToggle">アニメーション: ON</button><div class="small">ドット絵の動きを止めます（データや生活の進行は止まりません）。</div></div>
 <div class="panel"><h2>軽量表示 / LITE MODE</h2><button id="liteToggle">軽量表示: OFF</button><div class="small">ONにすると走査線と点滅アニメーションを止め、30秒ごとの自動更新では姿とシーンの再描画を省きます（古い端末向け）。</div></div>
 <div class="panel"><h2>WORLD UPDATE / 知識の取り込み</h2><div class="small">現実世界の知識を惑星の知識として保存する基盤です。外部情報は惑星内で生まれた知識と区別して記録し、SORA-01の記憶と文明の知識蓄積に影響します。AI連携は将来追加できます（今は必須ではありません）。</div><textarea id="wuText" placeholder="1行目にタイトル、2行目以降に内容を書いてください"></textarea><button id="wuAdd">知識として取り込む</button><div id="wuList"></div></div>
@@ -227,7 +227,7 @@ function copy(o){return JSON.parse(JSON.stringify(o))}
 function isNum(n){return typeof n==='number'&&isFinite(n)}
 function clamp(v,a,b){return v<a?a:v>b?b:v}
 function valid(w){
- if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54&&w.format!==55&&w.format!==56&&w.format!==57&&w.format!==58&&w.format!==59&&w.format!==60&&w.format!==61&&w.format!==62&&w.format!==63&&w.format!==64&&w.format!==65)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
+ if(!w||(w.format!==1&&w.format!==2&&w.format!==3&&w.format!==4&&w.format!==5&&w.format!==6&&w.format!==7&&w.format!==8&&w.format!==9&&w.format!==10&&w.format!==11&&w.format!==12&&w.format!==13&&w.format!==14&&w.format!==15&&w.format!==16&&w.format!==17&&w.format!==18&&w.format!==19&&w.format!==20&&w.format!==21&&w.format!==22&&w.format!==23&&w.format!==24&&w.format!==25&&w.format!==26&&w.format!==27&&w.format!==28&&w.format!==29&&w.format!==30&&w.format!==31&&w.format!==32&&w.format!==33&&w.format!==34&&w.format!==35&&w.format!==36&&w.format!==37&&w.format!==38&&w.format!==39&&w.format!==40&&w.format!==41&&w.format!==42&&w.format!==43&&w.format!==44&&w.format!==45&&w.format!==46&&w.format!==47&&w.format!==48&&w.format!==49&&w.format!==50&&w.format!==51&&w.format!==52&&w.format!==53&&w.format!==54&&w.format!==55&&w.format!==56&&w.format!==57&&w.format!==58&&w.format!==59&&w.format!==60&&w.format!==61&&w.format!==62&&w.format!==63&&w.format!==64&&w.format!==65&&w.format!==66)||!w.seed||typeof w.seed.worldId!=='string'||!isNum(w.seed.epoch)||!isNum(w.lastSim)||!isNum(w.season)||!w.seed.calendar||!(w.seed.calendar.dayMs>0)||!w.seed.calendar.seasons||!w.seed.calendar.week||!w.chronicle||typeof w.chronicle.length!=='number')return false;
  return w.chronicle.every(function(e){return e&&typeof e.id==='string'&&typeof e.text==='string'&&isNum(e.rt)});
 }
 function merge(base,extra){
@@ -389,6 +389,7 @@ function migrateWorld(w){
  if(w.format===62){w.format=63;initV63(w);if(w.seed)w.seed.status='v1.3-step5';w.chronicle.push({id:uid()+'-mig63',type:'system',text:'LIVING UNIVERSE STEP 5へ移行した（発見の進行：遺跡の解明段階が既存の発見状態と研究度から「未知・存在の兆候・発見・調査中・一部解明・詳細解明」の6段階で表示されるようになった。新しい発見データを捏造せず、既存データからの導出表示のみ）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===63){w.format=64;initV64(w);if(w.seed)w.seed.status='v1.3-step6';w.chronicle.push({id:uid()+'-mig64',type:'system',text:'LIVING UNIVERSE STEP 6へ移行した（文化の伝播：集落が2つ以上ある世界では、交流を通じてある集落の言葉が別の集落に伝わるようになった。伝わった言葉には伝播元が記録され、歴史にも原因つきで残る）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  if(w.format===64){w.format=65;initV65(w);if(w.seed)w.seed.status='v1.3-step7';w.chronicle.push({id:uid()+'-mig65',type:'system',text:'LIVING UNIVERSE STEP 7へ移行した（観測者のお気に入り：気になる個体と地域に★を付けられるようになった。お気に入りは観測者側の記録で、世界のシミュレーションには影響しない。MAINの観測パネルに一覧表示される）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
+ if(w.format===65){w.format=66;initV66(w);if(w.seed)w.seed.status='v1.3-step8';w.chronicle.push({id:uid()+'-mig66',type:'system',text:'LIVING UNIVERSE STEP 8へ移行した（環境音：SORA-01のいる地域の地形・天候・昼夜に合わせた小さな生成音が追加された。初期設定はOFFで、明示的にONにしたときだけ鳴り、軽量表示では無効になる）',wt:Math.max(0,Date.now()-w.seed.epoch),rt:Date.now()});changed=true}
  else if(w.format>15)initV16(w);
  return changed;
 }
@@ -396,8 +397,8 @@ function create(){
  var nowMs=Date.now(),oldTick=null,oldRec=null,recs=[],bad=false;
  oldTick=get('sora_tick');oldRec=get('sora_records');
  if(oldRec!==null){try{recs=JSON.parse(oldRec);if(Object.prototype.toString.call(recs)!=='[object Array]')throw 0}catch(e){recs=[];bad=true}}
- world={format:65,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.3-step7'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
- generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);initV62(world);initV63(world);initV64(world);initV65(world);
+ world={format:66,seed:{worldId:'SORA-'+uid(),terrainSeed:Math.floor(Math.random()*2147483647),epoch:nowMs,calendar:copy(CAL),initialLife:'SORA-01＋11体（PHASE 2）',rules:['歴史は削除・上書きしない'],status:'v1.3-step8'},lastSim:nowMs,season:0,chronicle:[],aiChat:[],aiEnabled:true,aiFirstDone:false};
+ generateData(world);initEcosystem(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);initV62(world);initV63(world);initV64(world);initV65(world);initV66(world);
  for(var i=recs.length-1;i>=0;i--)add('legacy','［旧Ver.0.1の記録］'+String(recs[i]),null,'legacy-'+i);
  if(oldTick!==null||oldRec!==null){
   world.legacy={tick:oldTick,records:oldRec};
@@ -1227,7 +1228,7 @@ function draw(){
  world.regions.forEach(function(r){(r.points||[]).forEach(function(pt){if(pt.found&&pt.ruins){hasRu=true;line(ru,pt.ruins.name+'（'+r.name+'） 未解読の文字：'+pt.ruins.glyphs+' / '+pt.ruins.decline+' / 解明段階：'+discStage(pt,r)+'（研究度 '+(pt.ruins.study||0)+'%）');line(ru,'　研究度 '+(pt.ruins.study||0)+'%'+(pt.ruins.lore&&pt.ruins.lore.length?' ― 読み解かれた記録：'+pt.ruins.lore[pt.ruins.lore.length-1]:''),'dim')}})});
  if(!hasRu)line(ru,'発見された遺跡はまだありません。');
  drawObserve();drawLife();drawSora();drawAiChat();drawFamily();drawSpecies();drawVisit();drawMainAreas();updateAlbumAndTraces();drawCivV14();drawVisualsV15();if(!heavySkip){drawPxWorld();drawScenePx()}
- var stg=$('soundToggle');if(stg)stg.textContent='効果音: '+(world.soundEnabled?'ON':'OFF');
+ var stg=$('soundToggle');if(stg)stg.textContent='効果音: '+(world.soundEnabled?'ON':'OFF');var atg=$('ambientToggle');if(atg)atg.textContent='環境音: '+(world.ambientEnabled?'ON':'OFF');
  var lt=$('liteToggle');if(lt)lt.textContent='軽量表示: '+(world.liteMode?'ON':'OFF');
  if(document.body&&document.body.classList)document.body.classList.toggle('lite',!!world.liteMode);
  /* MEMORY */
@@ -1880,6 +1881,32 @@ function driftTrait(cr,key,amt){
  ps[key]=clamp(Math.round((ps[key]+amt)*10)/10,Math.max(5,base-25),Math.min(99,base+25));
 }
 function stageLabel4(cr){if(cr.ageDays<100)return '幼少期';if(cr.ageDays<400)return '成長期';if(cr.ageDays<900)return '成熟期';return '老年期'}
+function initV66(w){initV65(w);if(w.ambientEnabled===undefined)w.ambientEnabled=false;if(!w.visual6)w.visual6={};w.visual6.ambient=true}
+var AMB_LAST=0;
+function ambTone(freq,freq2,dur,delay,vol,type){try{
+ var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+ if(!audioCtx)audioCtx=new AC();
+ if(audioCtx.state==='suspended'&&audioCtx.resume)audioCtx.resume();
+ var t0=audioCtx.currentTime+(delay||0);
+ var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+ o.type=type||'sine';o.frequency.setValueAtTime(freq,t0);
+ if(freq2)o.frequency.exponentialRampToValueAtTime(freq2,t0+dur);
+ g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(vol||0.02,t0+dur*0.3);g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+ o.connect(g);g.connect(audioCtx.destination);
+ o.start(t0);o.stop(t0+dur+0.05);
+}catch(e){}}
+function ambPlay(){if(!world||!world.ambientEnabled||world.liteMode)return;
+ if(typeof document!=='undefined'&&document.hidden)return;
+ var so=findLife('sora-01');if(!so)return;
+ var r=world.regions[so.region];if(!r)return;
+ var pp=parts(elapsedNow()),wx=weatherFor(pp.day,pp.seasonIdx),night=(pp.hour<5||pp.hour>=19);
+ if(wx==='雷雨'){ambTone(70,45,1.6,0,0.035,'triangle');ambTone(1200,900,0.08,0.4,0.008);return}
+ if(wx==='雨'){ambTone(1500,1100,0.06,0,0.01);ambTone(1400,1000,0.06,0.22,0.01);ambTone(1600,1200,0.06,0.45,0.008);return}
+ if(night){if(r.terrain==='森林'||r.terrain==='草原'||r.terrain==='湿地'){ambTone(4200,4200,0.05,0,0.008);ambTone(4200,4200,0.05,0.3,0.008);ambTone(4200,4200,0.05,0.6,0.006)}else ambTone(320,300,0.5,0,0.012);return}
+ if(r.terrain==='河川'||r.terrain==='湖'||r.terrain==='海岸'){ambTone(280,170,1.4,0,0.02);ambTone(240,160,1.2,1.0,0.015);return}
+ if(r.terrain==='森林'||r.terrain==='草原'){ambTone(2400,3200,0.12,0,0.012);ambTone(2600,3400,0.1,0.25,0.01);return}
+ if(r.terrain==='砂漠'||r.terrain==='火山'||r.terrain==='雪原'){ambTone(110,90,2.2,0,0.018,'triangle');return}
+ ambTone(500,420,0.8,0,0.01)}
 function initV65(w){initV64(w);if(!w.observer)w.observer={favLife:[],favRegions:[]};if(!w.observer.favLife)w.observer.favLife=[];if(!w.observer.favRegions)w.observer.favRegions=[]}
 function isFavLife(id){return !!(world&&world.observer&&world.observer.favLife&&world.observer.favLife.indexOf(id)>=0)}
 function isFavRegion(ri){return !!(world&&world.observer&&world.observer.favRegions&&world.observer.favRegions.indexOf(ri)>=0)}
@@ -3242,11 +3269,11 @@ function init(){
    readOnly=true;warn('保存データを読めません。上書きを防ぐため停止しました。SYSTEM画面で原文を書き出せます。');
    world={raw:raw};
   }
-  if(world&&world.seed&&world.format<65){
+  if(world&&world.seed&&world.format<66){
    try{put(BAK+'_pre_v'+(world.format+1),raw)}catch(e2){}
    migrated=migrateWorld(world);
   }else if(world&&world.seed){
-   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);initV62(world);initV63(world);initV64(world);initV65(world);
+   ensureCalendar(world);if(!world.regions||!world.life)generateData(world);initEcosystem(world);formGroupsW(world);initCivilization(world);initSpace(world);initAi(world);initV7(world);initV8(world);initV9(world);initV10(world);initV11(world);initV12(world);initV13(world);initV14(world);initV15(world);initV16(world);initV17(world);initV18(world);initV19(world);initV20(world);initV21(world);initV22(world);initV23(world);initV24(world);initV25(world);initV26(world);initV27(world);initV28(world);initV29(world);initV30(world);initV31(world);initV32(world);initV33(world);initV34(world);initV35(world);initV36(world);initV37(world);initV38(world);initV39(world);initV40(world);initV41(world);initV42(world);initV43(world);initV44(world);initV45(world);initV46(world);initV47(world);initV48(world);initV49(world);initV50(world);initV51(world);initV52(world);initV53(world);initV54(world);initV55(world);initV56(world);initV57(world);initV58(world);initV59(world);initV60(world);initV61(world);initV62(world);initV63(world);initV64(world);initV65(world);initV66(world);
   }
  }else{
   try{create()}catch(e){readOnly=true;world={raw:''};warn('保存領域を使えないため起動できません。')}
@@ -3324,7 +3351,7 @@ function init(){
   if(save()){$('wuText').value='';msg('知識を取り込みました。集落の知識蓄積に少しずつ影響します。')}
   draw();
  };
- $('soundToggle').onclick=function(){world.soundEnabled=!world.soundEnabled;if(save())msg('効果音を'+(world.soundEnabled?'ON':'OFF')+'にしました。');draw();if(world.soundEnabled)beep(880,0.08,0)};
+ $('soundToggle').onclick=function(){world.soundEnabled=!world.soundEnabled;if(save())msg('効果音を'+(world.soundEnabled?'ON':'OFF')+'にしました。');draw();if(world.soundEnabled)beep(880,0.08,0)};var at=$('ambientToggle');if(at)at.onclick=function(){world.ambientEnabled=!world.ambientEnabled;if(save())msg('環境音を'+(world.ambientEnabled?'ON':'OFF')+'にしました。');if(world.ambientEnabled)ambPlay()};setInterval(function(){ambPlay()},7000);
  $('liteToggle').onclick=function(){world.liteMode=!world.liteMode;if(save())msg('軽量表示を'+(world.liteMode?'ON':'OFF')+'にしました。');draw()};
  $('histExport').onclick=function(){exportHistory()};
  $('histKw').oninput=function(){histKeyword=$('histKw').value;limit=50;draw()};
